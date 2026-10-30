@@ -6,7 +6,7 @@ describe('Card', () => {
   it('presses in on hover instead of lifting', () => {
     render(<Card variant="interactive" data-testid="c" />);
     const card = screen.getByTestId('c');
-    expect(card).toHaveClass('hover:translate-x-px', 'hover:translate-y-px', 'hover:border-ink');
+    expect(card).toHaveClass('hover:translate-x-px', 'hover:translate-y-px', 'border-ink');
     expect(card.className).not.toMatch(/-translate-|transition-all|hover:shadow-sw/);
   });
 

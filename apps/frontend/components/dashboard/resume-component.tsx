@@ -46,6 +46,7 @@ export interface Education {
   institution?: string;
   degree?: string;
   years?: string;
+  grade?: string;
   description?: string;
 }
 
@@ -60,11 +61,18 @@ export interface Project {
   descriptionStyles?: ('bullet' | 'plain')[];
 }
 
+export interface AdditionalVisibility {
+  languages?: boolean;
+  certificationsTraining?: boolean;
+  awards?: boolean;
+}
+
 export interface AdditionalInfo {
   technicalSkills?: string[];
   languages?: string[];
   certificationsTraining?: string[];
   awards?: string[];
+  visibility?: AdditionalVisibility;
 }
 
 export interface AdditionalSectionLabels {
@@ -178,6 +186,14 @@ const Resume: React.FC<ResumeProps> = ({
     margins: { ...DEFAULT_TEMPLATE_SETTINGS.margins, ...settings?.margins },
     spacing: { ...DEFAULT_TEMPLATE_SETTINGS.spacing, ...settings?.spacing },
     fontSize: { ...DEFAULT_TEMPLATE_SETTINGS.fontSize, ...settings?.fontSize },
+    personalInfo: {
+      ...DEFAULT_TEMPLATE_SETTINGS.personalInfo,
+      ...settings?.personalInfo,
+      fields: {
+        ...DEFAULT_TEMPLATE_SETTINGS.personalInfo.fields,
+        ...settings?.personalInfo?.fields,
+      },
+    },
   };
 
   // If template is provided as prop but not in settings, use the prop
@@ -197,6 +213,7 @@ const Resume: React.FC<ResumeProps> = ({
         <ResumeSingleColumn
           earlierExperienceLabel={sectionHeadings?.earlierExperience}
           data={resumeData}
+          personalInfoSettings={mergedSettings.personalInfo}
           showContactIcons={mergedSettings.showContactIcons}
           additionalSectionLabels={additionalSectionLabels}
         />
@@ -205,6 +222,7 @@ const Resume: React.FC<ResumeProps> = ({
         <ResumeTwoColumn
           earlierExperienceLabel={sectionHeadings?.earlierExperience}
           data={resumeData}
+          personalInfoSettings={mergedSettings.personalInfo}
           showContactIcons={mergedSettings.showContactIcons}
           sectionHeadings={sectionHeadings}
         />
@@ -213,6 +231,7 @@ const Resume: React.FC<ResumeProps> = ({
         <ResumeModern
           earlierExperienceLabel={sectionHeadings?.earlierExperience}
           data={resumeData}
+          personalInfoSettings={mergedSettings.personalInfo}
           showContactIcons={mergedSettings.showContactIcons}
           additionalSectionLabels={additionalSectionLabels}
         />
@@ -221,6 +240,7 @@ const Resume: React.FC<ResumeProps> = ({
         <ResumeModernTwoColumn
           earlierExperienceLabel={sectionHeadings?.earlierExperience}
           data={resumeData}
+          personalInfoSettings={mergedSettings.personalInfo}
           showContactIcons={mergedSettings.showContactIcons}
           sectionHeadings={sectionHeadings}
           fallbackLabels={fallbackLabels}
@@ -230,6 +250,7 @@ const Resume: React.FC<ResumeProps> = ({
         <ResumeLatex
           earlierExperienceLabel={sectionHeadings?.earlierExperience}
           data={resumeData}
+          personalInfoSettings={mergedSettings.personalInfo}
           showContactIcons={mergedSettings.showContactIcons}
           additionalSectionLabels={additionalSectionLabels}
         />
@@ -238,6 +259,7 @@ const Resume: React.FC<ResumeProps> = ({
         <ResumeClean
           earlierExperienceLabel={sectionHeadings?.earlierExperience}
           data={resumeData}
+          personalInfoSettings={mergedSettings.personalInfo}
           showContactIcons={mergedSettings.showContactIcons}
           additionalSectionLabels={additionalSectionLabels}
         />
@@ -246,6 +268,7 @@ const Resume: React.FC<ResumeProps> = ({
         <ResumeVivid
           earlierExperienceLabel={sectionHeadings?.earlierExperience}
           data={resumeData}
+          personalInfoSettings={mergedSettings.personalInfo}
           showContactIcons={mergedSettings.showContactIcons}
           sectionHeadings={sectionHeadings}
           fallbackLabels={fallbackLabels}
@@ -255,6 +278,7 @@ const Resume: React.FC<ResumeProps> = ({
         <ResumeVividSingle
           earlierExperienceLabel={sectionHeadings?.earlierExperience}
           data={resumeData}
+          personalInfoSettings={mergedSettings.personalInfo}
           showContactIcons={mergedSettings.showContactIcons}
           sectionHeadings={sectionHeadings}
           fallbackLabels={fallbackLabels}
@@ -264,6 +288,7 @@ const Resume: React.FC<ResumeProps> = ({
         <ResumeModernDeedy
           earlierExperienceLabel={sectionHeadings?.earlierExperience}
           data={resumeData}
+          personalInfoSettings={mergedSettings.personalInfo}
           showContactIcons={mergedSettings.showContactIcons}
           additionalSectionLabels={additionalSectionLabels}
         />
@@ -272,6 +297,7 @@ const Resume: React.FC<ResumeProps> = ({
         <ResumeDeedy
           earlierExperienceLabel={sectionHeadings?.earlierExperience}
           data={resumeData}
+          personalInfoSettings={mergedSettings.personalInfo}
           sectionHeadings={sectionHeadings}
           additionalSectionLabels={additionalSectionLabels}
           fallbackLabels={fallbackLabels}

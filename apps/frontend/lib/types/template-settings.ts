@@ -58,6 +58,42 @@ export interface FontSizeSettings {
   bodyFont: BodyFontFamily; // Body text font family
 }
 
+/**
+ * Personal-info header layout, independent of the resume template. The layout
+ * and name style apply to single-column / top-header templates; two-column
+ * sidebars keep their own header but still honour the field toggles.
+ */
+export type PersonalInfoLayout =
+  | 'two-line-center' // name row centered, contacts centered below
+  | 'two-line-2col' // name column on the left, contacts fill a 2nd column
+  | 'two-line-3col' // name column on the left, contacts fill 2 more columns
+  | 'one-line' // name + contacts on a single inline row
+  | 'two-line-left' // two-line-center, left aligned
+  | 'two-line-right'; // two-line-center, right aligned
+
+/** Name emphasis, controlled separately from the contact layout. */
+export type PersonalInfoNameStyle =
+  | 'large' // prominent name, follows the layout alignment
+  | 'centered' // prominent name, name row forced centered
+  | 'match'; // name typeset like the contact text (most compact)
+
+/** Toggleable personal-info fields. Name is always shown and is not listed. */
+export type PersonalInfoField =
+  | 'title'
+  | 'email'
+  | 'phone'
+  | 'location'
+  | 'website'
+  | 'linkedin'
+  | 'github';
+
+export interface PersonalInfoSettings {
+  layout: PersonalInfoLayout;
+  nameStyle: PersonalInfoNameStyle;
+  /** Which fields to include; name is always rendered. */
+  fields: Record<PersonalInfoField, boolean>;
+}
+
 export interface TemplateSettings {
   template: TemplateType;
   pageSize: PageSize;
@@ -67,6 +103,22 @@ export interface TemplateSettings {
   compactMode: boolean; // Apply tighter spacing across the board
   showContactIcons: boolean; // Show icons next to contact info
   accentColor: AccentColor; // Accent color for Modern template
+  personalInfo: PersonalInfoSettings; // Header layout, name style, field toggles
+}
+
+export const PERSONAL_INFO_FIELDS: readonly PersonalInfoField[] = [
+  'title',
+  'email',
+  'phone',
+  'location',
+  'website',
+  'linkedin',
+  'github',
+];
+
+/** CSV of the enabled personal-info field keys, for the PDF print URL. */
+export function serializePersonalInfoFields(fields: Record<PersonalInfoField, boolean>): string {
+  return PERSONAL_INFO_FIELDS.filter((field) => fields[field]).join(',');
 }
 
 /**
@@ -81,6 +133,19 @@ export const DEFAULT_TEMPLATE_SETTINGS: TemplateSettings = {
   compactMode: false,
   showContactIcons: false,
   accentColor: 'blue',
+  personalInfo: {
+    layout: 'two-line-center',
+    nameStyle: 'large',
+    fields: {
+      title: true,
+      email: true,
+      phone: true,
+      location: true,
+      website: true,
+      linkedin: true,
+      github: true,
+    },
+  },
 };
 
 /**

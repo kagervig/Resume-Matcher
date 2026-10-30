@@ -15,9 +15,9 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       // The card itself is not focusable, so it carries no focus ring: the link or button
       // inside owns the ring, and the tile reacts to it with has-[:focus-visible].
       interactive: cn(
-        'bg-canvas border-2 border-transparent cursor-pointer group',
+        'bg-canvas border-2 border-ink cursor-pointer group',
         'transition-[transform,box-shadow,border-color]',
-        'hover:z-20 hover:border-ink hover:translate-x-px hover:translate-y-px'
+        'hover:z-20 hover:translate-x-px hover:translate-y-px'
       ),
       raised: cn(
         'bg-white border border-ink shadow-sw-nested transition-[transform,box-shadow]',

@@ -32,7 +32,8 @@
     "keysCleared": "API 키가 성공적으로 삭제되었습니다",
     "databaseReset": "데이터베이스가 성공적으로 초기화되었습니다",
     "popupBlocked": "팝업이 차단되었습니다. 팝업을 허용하거나 다음 URL을 직접 열어주세요: {url}",
-    "resumeDeleted": "이 이력서는 삭제되었습니다. 다른 이력서를 업로드하거나 선택하세요."
+    "resumeDeleted": "이 이력서는 삭제되었습니다. 다른 이력서를 업로드하거나 선택하세요.",
+    "noResults": "결과 없음"
   },
   "home": {
     "brandLine1": "Resume",
@@ -61,7 +62,9 @@
     "backToDashboard": "대시보드로 돌아가기",
     "goToSettings": "설정으로 이동",
     "applicationTracker": "지원 현황 트래커",
-    "queue": "맞춤화 대기열"
+    "queue": "맞춤화 대기열",
+    "usage": "사용량",
+    "allResumes": "모든 이력서"
   },
   "dashboard": {
     "title": "대시보드",
@@ -127,7 +130,20 @@
     "setDefault": "기본으로 설정",
     "duplicate": "복제",
     "addMasterTrack": "마스터 트랙 추가",
-    "masterLimitReached": "마스터 이력서는 최대 {max}개까지"
+    "masterLimitReached": "마스터 이력서는 최대 {max}개까지",
+    "missionControl": "미션 컨트롤",
+    "pendingApplications": "대기 중인 지원",
+    "pendingCount": "{count}건 대기 중",
+    "appliedCount": "{count}건 지원됨",
+    "iApplied": "지원 완료",
+    "iApplying": "표시 중...",
+    "iAppliedError": "지원 완료로 표시하지 못했습니다. 다시 시도해 주세요.",
+    "viewAllResumes": "모든 이력서",
+    "generateNew": "새 이력서 생성",
+    "sessionCost": "세션 비용",
+    "sessionCalls": "{count}회 호출",
+    "pending": "대기 중",
+    "applied": "지원됨"
   },
   "builder": {
     "panels": {
@@ -166,7 +182,8 @@
         "languages": "영어\n스페인어",
         "certifications": "AWS Solution Architect\nGoogle Analytics",
         "awards": "이달의 직원\n해커톤 우승"
-      }
+      },
+      "toggleDescription": "이력서에 표시"
     },
     "customSections": {
       "dialogTitle": "사용자 지정 섹션 추가",
@@ -287,6 +304,18 @@
       }
     },
     "jdMatch": {
+      "summary": {
+        "title": "채용 공고 요약",
+        "description": "이 채용 공고의 AI 요약 — 핵심 내용, 주요 역량, 핵심 키워드.",
+        "generate": "공고 요약",
+        "regenerate": "다시 생성",
+        "generating": "요약 중…",
+        "competenciesHeading": "핵심 역량",
+        "keywordsHeading": "주요 키워드",
+        "generateFailed": "요약을 생성하지 못했습니다. 다시 시도해 주세요.",
+        "loadFailed": "요약을 불러오지 못했습니다.",
+        "empty": "아직 요약이 없습니다. 생성하여 이 공고를 파악하세요."
+      },
       "yourResume": "내 이력서",
       "matchingKeywordsHighlighted": "(일치하는 키워드가 강조 표시됨)",
       "jobDescriptionTitle": "채용 공고",
@@ -376,6 +405,7 @@
         "fields": {
           "institution": "학교명",
           "degree": "학위",
+          "grade": "성적 / GPA",
           "description": "설명",
           "descriptionOptional": "설명 (선택 사항)"
         },
@@ -383,6 +413,7 @@
           "institution": "학교 이름",
           "degree": "학사 학위",
           "years": "2016년 8월 - 2020년 5월",
+          "grade": "3.9 / 4.0",
           "description": "추가 세부 정보..."
         }
       },
@@ -491,7 +522,35 @@
       "effectiveHeaderFont": "제목 글꼴",
       "effectiveBodyFont": "본문 글꼴",
       "compactHint": "컴팩트 모드는 간격과 줄 높이를 좁힙니다. 여백과 기본 글꼴 크기는 그대로 유지됩니다.",
-      "resetDefaults": "기본값으로 재설정"
+      "resetDefaults": "기본값으로 재설정",
+      "personalInfo": {
+        "title": "개인 정보",
+        "nameStyle": "이름 스타일",
+        "layout": "연락처 레이아웃",
+        "fields": "포함할 항목",
+        "nameStyles": {
+          "large": "크게",
+          "centered": "가운데",
+          "match": "연락처와 동일"
+        },
+        "layouts": {
+          "two-line-center": "가운데",
+          "two-line-2col": "2열",
+          "two-line-3col": "3열",
+          "one-line": "1줄",
+          "two-line-left": "왼쪽",
+          "two-line-right": "오른쪽"
+        },
+        "fieldLabels": {
+          "title": "직함",
+          "email": "이메일",
+          "phone": "전화",
+          "location": "위치",
+          "website": "웹사이트",
+          "linkedin": "LinkedIn",
+          "github": "GitHub"
+        }
+      }
     },
     "personalInfoForm": {
       "placeholders": {
@@ -523,6 +582,8 @@
       "downloadNotAvailable": "다운로드는 저장된 이력서에서만 사용할 수 있습니다.",
       "downloadFailed": "이력서 다운로드에 실패했습니다. 다시 시도해 주세요.",
       "coverLetterSaveFailed": "자기소개서 저장에 실패했습니다. 다시 시도해 주세요.",
+      "coverLetterSignatureSaveSuccess": "서명이 저장되었습니다",
+      "coverLetterSignatureSaveFailed": "서명 저장에 실패했습니다. 다시 시도해 주세요.",
       "coverLetterDownloadRequiresResume": "자기소개서를 다운로드하려면 먼저 이력서를 저장하세요.",
       "coverLetterMissing": "자기소개서가 없습니다. 설정에서 자기소개서 생성을 활성화하고 이력서를 맞춤화하세요.",
       "coverLetterDownloadFailed": "자기소개서 다운로드에 실패했습니다: {error}",
@@ -531,7 +592,9 @@
       "outreachGenerateFailed": "아웃리치 메시지 생성에 실패했습니다: {error}",
       "interviewPrepGenerateFailed": "면접 준비 자료 생성에 실패했습니다: {error}",
       "autoSaveFailed": "동기화하지 못했습니다. 초안은 로컬에 안전하게 저장되어 있습니다.",
-      "loadFailed": "서버에서 이 이력서를 불러오지 못했습니다. 새로고침하여 다시 시도해 주세요. 저장된 사본을 덮어쓰지 않도록 편집이 비활성화되었습니다."
+      "loadFailed": "서버에서 이 이력서를 불러오지 못했습니다. 새로고침하여 다시 시도해 주세요. 저장된 사본을 덮어쓰지 않도록 편집이 비활성화되었습니다.",
+      "coverLetterSignatureDefaultSaveSuccess": "모든 자기소개서의 기본 서명으로 저장되었습니다.",
+      "coverLetterSignatureDefaultSaveFailed": "기본 서명 설정에 실패했습니다. 다시 시도해 주세요."
     },
     "autoSave": {
       "saving": "동기화 중...",
@@ -804,7 +867,13 @@
       "languageChanges": "언어 변경 사항",
       "awardChanges": "수상 내역 변경 사항",
       "rejectButton": "거부하고 다시 생성",
-      "confirmButton": "확인하고 저장"
+      "confirmButton": "확인하고 저장",
+      "totalChanges": "총 변경 사항",
+      "awardsAdded": "추가된 수상 경력",
+      "languagesAdded": "추가된 언어",
+      "noChangesTitle": "변경 사항 없음",
+      "noChangesMessage": "맞춤화된 이력서가 원본과 동일합니다. 아래 경고를 확인하세요.",
+      "warningsList": "경고"
     },
     "atsScore": {
       "title": "ATS 점수 상세",
@@ -840,6 +909,10 @@
     },
     "selectResumeDescription": "글머리 기호는 이 마스터 이력서에서 가져옵니다.",
     "tailoringLabel": "맞춤화 대상:",
+    "company": "회사",
+    "companyPlaceholder": "Acme Corp",
+    "role": "직무명",
+    "rolePlaceholder": "시니어 소프트웨어 엔지니어",
     "jobDescriptionHint": "담당 업무와 자격 요건을 포함한 채용 공고 전문을 붙여넣으세요(50자 이상).",
     "steps": {
       "label": "맞춤화 진행 단계",
@@ -856,6 +929,19 @@
       "unavailable": "페이지 맞춤을 사용할 수 없습니다",
       "finalOver": "다시 작성한 후 페이지 제한을 초과할 수 있습니다",
       "notRechecked": "다시 작성한 후 페이지 제한 맞춤을 다시 확인하지 못했습니다"
+    },
+    "rating": {
+      "prompt": "이 결과 평가:",
+      "thanks": "피드백 감사합니다!",
+      "good": "좋음",
+      "bad": "개선 필요",
+      "error": "평가를 저장할 수 없습니다."
+    },
+    "applied": {
+      "bannerTitle": "이력서가 맞춤화되었습니다",
+      "bannerDescription": "{count}개의 변경이 적용되었습니다.",
+      "bannerNone": "변경 사항이 적용되지 않았습니다.",
+      "dismiss": "닫기"
     }
   },
   "settings": {
@@ -894,7 +980,10 @@
       "resumes": "이력서",
       "jobs": "채용 공고",
       "improvements": "개선 사항",
-      "masterResume": "마스터 이력서"
+      "masterResume": "마스터 이력서",
+      "sessionCost": "세션 비용",
+      "sessionCalls": "이번 세션 {count}회 호출",
+      "sessionReset": "초기화"
     },
     "statusValues": {
       "healthy": "정상",
@@ -987,7 +1076,11 @@
       },
       "healthWarnings": {
         "empty_content": "상태 확인 시 LLM이 빈 응답을 반환했습니다."
-      }
+      },
+      "openRouterSelectModel": "모델 선택",
+      "openRouterPrice": "입력 {in} / 출력 {out} (100만 토큰당)",
+      "openRouterLoading": "모델 불러오는 중…",
+      "openRouterError": "모델을 불러올 수 없습니다 — 모델 이름을 직접 입력하세요."
     },
     "chatgpt": {
       "continue": "ChatGPT로 계속하기",
@@ -1028,6 +1121,10 @@
       "interviewPrep": {
         "label": "면접 준비",
         "description": "저장된 맞춤화 이력서와 함께 면접 준비 자료를 자동으로 생성합니다"
+      },
+      "preserveEducation": {
+        "label": "학력 유지",
+        "description": "맞춤화 중 학력 항목을 변경하지 않습니다. 이력서 빌더에서 수동으로 편집할 수 있습니다."
       }
     },
     "promptSettings": {
@@ -1092,7 +1189,8 @@
     "setDefaultSuccess": "이 마스터가 이제 맞춤화의 기본 마스터입니다.",
     "setDefaultError": "이 이력서를 기본 마스터로 설정하지 못했습니다. 다시 시도해 주세요.",
     "duplicate": "복제",
-    "duplicateError": "이 이력서를 복제하지 못했습니다. 다시 시도해 주세요."
+    "duplicateError": "이 이력서를 복제하지 못했습니다. 다시 시도해 주세요.",
+    "viewCoverLetter": "자기소개서 보기"
   },
   "preview": {
     "margins": "여백",
@@ -1121,8 +1219,8 @@
       "earlierExperience": "이전 경력",
       "education": "학력",
       "projects": "프로젝트",
-      "skills": "기술 및 수상 내역",
-      "skillsOnly": "기술",
+      "skills": "스킬",
+      "skillsOnly": "기술 스킬",
       "certifications": "교육 및 자격증",
       "languages": "언어",
       "awards": "수상 내역",
@@ -1132,7 +1230,10 @@
       "name": "이름"
     },
     "additional": {
-      "technicalSkills": "기술 스킬"
+      "technicalSkills": "기술 스킬",
+      "languages": "언어",
+      "certifications": "자격증 및 교육",
+      "awards": "수상 경력"
     },
     "additionalLabels": {
       "technicalSkills": "기술 스킬:",
@@ -1151,6 +1252,16 @@
       "placeholder": "자기소개서 생성을 활성화한 상태로 이력서를 맞춤화하면 여기에 자기소개서가 표시됩니다...",
       "tip": "팁: 좋은 자기소개서는 보통 300~400단어입니다. 필요에 따라 편집해 개인화하세요."
     },
+    "signature": {
+      "label": "서명",
+      "placeholder": "감사합니다,\n\n{name}",
+      "tip": "팁: {name}은 자리 표시자입니다. 편집하여 개인화하세요.",
+      "save": "서명 저장",
+      "saving": "저장 중...",
+      "saveForThisLetter": "이 편지에 저장",
+      "setDefault": "기본값으로 설정",
+      "defaultHint": "'기본값으로 설정'을 선택하면 특정 편지에 다른 서명을 저장하지 않는 한 모든 자기소개서에 이 서명이 적용됩니다."
+    },
     "preview": {
       "defaultName": "이름",
       "emptyTitle": "아직 자기소개서 내용이 없습니다.",
@@ -1158,6 +1269,62 @@
     },
     "print": {
       "emptyContent": "이용 가능한 자기소개서 내용이 없습니다."
+    },
+    "wizard": {
+      "title": "자기소개서 맞춤 설정",
+      "subtitle": "이 질문에 답하여 300~400단어의 맞춤형 자기소개서를 생성하세요.",
+      "questions": {
+        "companyConnection": {
+          "label": "회사와의 연결고리",
+          "question": "왜 이 회사인가요? 지원을 결심하게 된 특정 프로젝트, 제품, 가치 또는 최근 소식이 있나요?",
+          "placeholder": "예: 예전부터 X에 대한 귀사의 작업을 지켜봐 왔습니다..."
+        },
+        "heroAchievement": {
+          "label": "핵심 성과",
+          "question": "이력서에서 이 직무에 가장 잘 맞는 1~2가지 성과는 무엇인가요? 그 배경 이야기는?",
+          "placeholder": "예: 〜의 마이그레이션을 주도했습니다..."
+        },
+        "missingLink": {
+          "label": "격차 메우기",
+          "question": "채용 공고에 있지만 이력서에 두드러지지 않는, 보유하고 있는 기술이나 도구가 있나요?",
+          "placeholder": "예: 사이드 프로젝트에서 X를 사용했지만 이력서에는 없습니다..."
+        },
+        "careerNarrative": {
+          "label": "경력 스토리",
+          "question": "이직에 대한 배경이 있나요(경력 전환, 승진, 업계 변경 등)? 동기는 무엇인가요?",
+          "placeholder": "예: X에서 3년을 보낸 후 〜한 이유로 Y로 전환하고 있습니다..."
+        },
+        "formatting": {
+          "label": "서식",
+          "fontLabel": "글꼴",
+          "fontSizeLabel": "글꼴 크기",
+          "fonts": ["Georgia", "Arial", "Calibri", "Times New Roman", "Garamond"],
+          "fontSizes": ["10.5pt", "11pt", "11.5pt", "12pt"]
+        },
+        "referenceLine": {
+          "label": "참조 라인",
+          "jobTitleLabel": "정확한 직무명",
+          "jobTitlePlaceholder": "예: 시니어 소프트웨어 엔지니어",
+          "companyNameLabel": "회사명",
+          "companyNamePlaceholder": "예: Stripe"
+        }
+      },
+      "actions": {
+        "generate": "자기소개서 생성",
+        "generating": "생성 중...",
+        "regenerate": "다시 생성",
+        "regenerating": "다시 생성 중...",
+        "editAnswers": "답변 편집"
+      },
+      "feedback": {
+        "title": "개선 제안",
+        "placeholder": "예: 2번째 문단을 더 기술적으로, 글꼴을 Garamond 11pt로 변경",
+        "submit": "피드백으로 다시 생성",
+        "submitting": "다시 생성 중..."
+      },
+      "errors": {
+        "generateFailed": "자기소개서 생성에 실패했습니다: {error}"
+      }
     }
   },
   "outreach": {
@@ -1444,5 +1611,32 @@
       "deleteInProgress": "이 공고는 맞춤화 중입니다. 완료된 뒤 제거하세요.",
       "clearFailed": "대기열을 지우지 못했습니다. 다시 시도하세요."
     }
+  },
+  "usage": {
+    "title": "사용량 및 비용",
+    "subtitle": "모델별 지출, 평가, 응답 시간",
+    "loadError": "사용량 통계를 불러올 수 없습니다.",
+    "sessionTitle": "현재 세션",
+    "sessionCost": "세션 비용",
+    "sessionCalls": "이번 세션 {count}회 호출",
+    "reset": "세션 초기화",
+    "modelsTitle": "모델별",
+    "emptyTitle": "아직 사용 내역 없음",
+    "emptyDescription": "맞춤 작업이나 다른 AI 작업을 실행하면 모델별 통계가 여기에 표시됩니다.",
+    "table": {
+      "model": "모델",
+      "queries": "쿼리",
+      "totalCost": "총 비용",
+      "avgCost": "쿼리당 비용",
+      "avgLatency": "평균 응답",
+      "rating": "평가"
+    }
+  },
+  "coverLetterViewer": {
+    "loading": "자기소개서를 불러오는 중...",
+    "notFound": "이 이력서에 대한 자기소개서를 찾을 수 없습니다.",
+    "backToResume": "이력서로 돌아가기",
+    "download": "자기소개서 다운로드",
+    "failedToLoad": "자기소개서를 불러오지 못했습니다."
   }
 }

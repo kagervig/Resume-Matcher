@@ -19,6 +19,9 @@ vi.mock('@/lib/context/language-context', () => ({
 }));
 vi.mock('@/components/enrichment/enrichment-modal', () => ({ EnrichmentModal: () => null }));
 vi.mock('@/components/dashboard/resume-component', () => ({ default: () => null }));
+vi.mock('@/components/common/resume_previewer_context', () => ({
+  useResumePreview: () => ({ improvedData: null, setImprovedData: vi.fn() }),
+}));
 vi.mock('@/lib/api/resume', () => ({
   fetchResume: vi.fn(),
   deleteResume: vi.fn(),

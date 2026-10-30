@@ -212,6 +212,18 @@ async def test_copy_rows_copies_every_table_once(tmp_path: Path) -> None:
         )
         source.set_api_key_ciphertext("openai", "ciphertext")
         await source.create_queue_item("q1", resume["resume_id"], "Engineer")
+        source.record_llm_call(
+            id="call-1",
+            provider="openrouter",
+            model="anthropic/claude-3.7-sonnet",
+            feature="improve",
+            request_id=None,
+            prompt_tokens=100,
+            completion_tokens=50,
+            total_tokens=150,
+            cost_usd=0.01,
+            latency_ms=1000,
+        )
 
         counts = copy_rows(source, target)
         assert counts == {table.name: 1 for table in Base.metadata.sorted_tables}

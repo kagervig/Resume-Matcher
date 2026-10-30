@@ -194,6 +194,70 @@ class TestBulkAndDelete:
         assert board["applied"] == []
 
 
+class TestApplyFromResume:
+    async def test_creates_applied_card_from_tailored_resume(self, isolated_db):
+        master = await isolated_db.create_resume(content="# Master", is_master=True)
+        tailored = await isolated_db.create_resume(content="# Tailored")
+        job = await isolated_db.create_job(
+            content="JD", metadata={"company": "Acme Corp", "role": "Staff Engineer"}
+        )
+        await isolated_db.create_improvement(
+            original_resume_id=master["resume_id"],
+            tailored_resume_id=tailored["resume_id"],
+            job_id=job["job_id"],
+            improvements=[],
+        )
+        async with _client() as client:
+            resp = await client.post(
+                "/api/v1/applications/from-resume",
+                json={"resume_id": tailored["resume_id"]},
+            )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "applied"
+        assert body["resume_id"] == tailored["resume_id"]
+        assert body["job_id"] == job["job_id"]
+        assert body["master_resume_id"] == master["resume_id"]
+        assert body["company"] == "Acme Corp"
+        assert body["role"] == "Staff Engineer"
+        assert body["applied_at"] is not None
+
+    async def test_promotes_existing_saved_card_to_applied(self, isolated_db):
+        master = await isolated_db.create_resume(content="# Master", is_master=True)
+        tailored = await isolated_db.create_resume(content="# Tailored")
+        job = await isolated_db.create_job(content="JD")
+        await isolated_db.create_improvement(
+            original_resume_id=master["resume_id"],
+            tailored_resume_id=tailored["resume_id"],
+            job_id=job["job_id"],
+            improvements=[],
+        )
+        existing = await isolated_db.create_application(
+            job_id=job["job_id"],
+            resume_id=tailored["resume_id"],
+            status="saved",
+        )
+        assert existing["applied_at"] is None
+        async with _client() as client:
+            resp = await client.post(
+                "/api/v1/applications/from-resume",
+                json={"resume_id": tailored["resume_id"]},
+            )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["application_id"] == existing["application_id"]
+        assert body["status"] == "applied"
+        assert body["applied_at"] is not None
+
+    async def test_unknown_resume_returns_404(self, isolated_db):
+        async with _client() as client:
+            resp = await client.post(
+                "/api/v1/applications/from-resume",
+                json={"resume_id": "no-improvement-resume"},
+            )
+        assert resp.status_code == 404
+
+
 class TestRobustnessFixes:
     async def test_create_dedupes_same_job_resume(self, isolated_db):
         """A second card for the same (job, resume) returns the existing one."""

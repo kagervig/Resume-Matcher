@@ -32,7 +32,8 @@
     "keysCleared": "APIキーが正常にクリアされました",
     "databaseReset": "データベースが正常にリセットされました",
     "popupBlocked": "ポップアップがブロックされました。ポップアップを許可するか、次のURLを手動で開いてください: {url}",
-    "resumeDeleted": "この履歴書は削除されました。別の履歴書をアップロードするか選択してください。"
+    "resumeDeleted": "この履歴書は削除されました。別の履歴書をアップロードするか選択してください。",
+    "noResults": "結果なし"
   },
   "home": {
     "brandLine1": "履歴書",
@@ -61,7 +62,9 @@
     "backToDashboard": "ダッシュボードに戻る",
     "goToSettings": "設定へ",
     "applicationTracker": "応募トラッカー",
-    "queue": "カスタマイズキュー"
+    "queue": "カスタマイズキュー",
+    "usage": "使用状況",
+    "allResumes": "すべての履歴書"
   },
   "dashboard": {
     "title": "ダッシュボード",
@@ -127,7 +130,20 @@
     "setDefault": "デフォルトに設定",
     "duplicate": "複製",
     "addMasterTrack": "マスタートラックを追加",
-    "masterLimitReached": "マスター履歴書は最大{max}件まで"
+    "masterLimitReached": "マスター履歴書は最大{max}件まで",
+    "missionControl": "ミッションコントロール",
+    "pendingApplications": "保留中の応募",
+    "pendingCount": "{count} 件保留中",
+    "appliedCount": "{count} 件応募済み",
+    "iApplied": "応募しました",
+    "iApplying": "登録中...",
+    "iAppliedError": "応募済みにできませんでした。もう一度お試しください。",
+    "viewAllResumes": "すべての履歴書",
+    "generateNew": "新しい履歴書を生成",
+    "sessionCost": "セッション費用",
+    "sessionCalls": "{count} 回の呼び出し",
+    "pending": "保留中",
+    "applied": "応募済み"
   },
   "builder": {
     "panels": {
@@ -188,7 +204,8 @@
         "languages": "日本語\n英語",
         "certifications": "AWS Solution Architect\nGoogle Analytics",
         "awards": "月間MVP\nハッカソン優勝"
-      }
+      },
+      "toggleDescription": "履歴書に表示する"
     },
     "customSections": {
       "dialogTitle": "カスタムセクションを追加",
@@ -309,6 +326,18 @@
       }
     },
     "jdMatch": {
+      "summary": {
+        "title": "求人の要約",
+        "description": "この求人内容のAI要約 — 要点、求められる主要スキル、重要なキーワード。",
+        "generate": "求人を要約",
+        "regenerate": "再生成",
+        "generating": "要約中…",
+        "competenciesHeading": "主要スキル",
+        "keywordsHeading": "重要なキーワード",
+        "generateFailed": "要約を生成できませんでした。もう一度お試しください。",
+        "loadFailed": "要約を読み込めませんでした。",
+        "empty": "まだ要約がありません。生成してこの求人内容を把握しましょう。"
+      },
       "yourResume": "あなたの履歴書",
       "matchingKeywordsHighlighted": "（一致キーワードをハイライト）",
       "jobDescriptionTitle": "求人内容",
@@ -398,6 +427,7 @@
         "fields": {
           "institution": "学校/機関",
           "degree": "学位",
+          "grade": "成績 / GPA",
           "description": "説明",
           "descriptionOptional": "説明（任意）"
         },
@@ -405,6 +435,7 @@
           "institution": "大学名",
           "degree": "学士（理学）",
           "years": "2016年8月 - 2020年5月",
+          "grade": "3.9 / 4.0",
           "description": "追加の詳細..."
         }
       },
@@ -513,7 +544,35 @@
       "effectiveHeaderFont": "見出しフォント",
       "effectiveBodyFont": "本文フォント",
       "compactHint": "コンパクトモードでは間隔と行間が詰まります。余白と本文フォントサイズは維持されます。",
-      "resetDefaults": "デフォルトに戻す"
+      "resetDefaults": "デフォルトに戻す",
+      "personalInfo": {
+        "title": "個人情報",
+        "nameStyle": "名前のスタイル",
+        "layout": "連絡先レイアウト",
+        "fields": "含める項目",
+        "nameStyles": {
+          "large": "大きい",
+          "centered": "中央",
+          "match": "連絡先に合わせる"
+        },
+        "layouts": {
+          "two-line-center": "中央",
+          "two-line-2col": "2列",
+          "two-line-3col": "3列",
+          "one-line": "1行",
+          "two-line-left": "左",
+          "two-line-right": "右"
+        },
+        "fieldLabels": {
+          "title": "肩書き",
+          "email": "メール",
+          "phone": "電話",
+          "location": "所在地",
+          "website": "ウェブサイト",
+          "linkedin": "LinkedIn",
+          "github": "GitHub"
+        }
+      }
     },
     "personalInfoForm": {
       "placeholders": {
@@ -547,13 +606,17 @@
       "downloadNotAvailable": "保存済みの履歴書のみダウンロードできます。",
       "downloadFailed": "履歴書のダウンロードに失敗しました。もう一度お試しください。",
       "coverLetterSaveFailed": "カバーレターの保存に失敗しました。もう一度お試しください。",
+      "coverLetterSignatureSaveSuccess": "署名を保存しました",
+      "coverLetterSignatureSaveFailed": "署名の保存に失敗しました。もう一度お試しください。",
       "coverLetterDownloadRequiresResume": "カバーレターをダウンロードする前に履歴書を保存してください。",
       "coverLetterMissing": "カバーレターがありません。設定で生成を有効にして履歴書をカスタマイズしてください。",
       "coverLetterDownloadFailed": "カバーレターのダウンロードに失敗しました: {error}",
       "outreachSaveFailed": "連絡メールの保存に失敗しました。もう一度お試しください。",
       "coverLetterGenerateFailed": "カバーレターの生成に失敗しました: {error}",
       "outreachGenerateFailed": "連絡メールの生成に失敗しました: {error}",
-      "interviewPrepGenerateFailed": "面接準備の生成に失敗しました: {error}"
+      "interviewPrepGenerateFailed": "面接準備の生成に失敗しました: {error}",
+      "coverLetterSignatureDefaultSaveSuccess": "すべてのカバーレターのデフォルト署名として保存しました。",
+      "coverLetterSignatureDefaultSaveFailed": "デフォルト署名の設定に失敗しました。もう一度お試しください。"
     },
     "leaveWithoutDraft": {
       "title": "未保存の変更を残して移動しますか？",
@@ -804,7 +867,13 @@
       "languageChanges": "言語の変更",
       "awardChanges": "賞の変更",
       "rejectButton": "拒否して再生成",
-      "confirmButton": "確認して保存"
+      "confirmButton": "確認して保存",
+      "totalChanges": "変更の合計",
+      "awardsAdded": "追加された受賞歴",
+      "languagesAdded": "追加された言語",
+      "noChangesTitle": "変更なし",
+      "noChangesMessage": "カスタマイズされた履歴書は元の履歴書と同じです。以下の警告を確認してください。",
+      "warningsList": "警告"
     },
     "atsScore": {
       "title": "ATSスコアの内訳",
@@ -840,6 +909,10 @@
     },
     "selectResumeDescription": "箇条書きはこのマスター履歴書から選ばれます。",
     "tailoringLabel": "カスタマイズ対象：",
+    "company": "企業名",
+    "companyPlaceholder": "Acme Corp",
+    "role": "職種",
+    "rolePlaceholder": "シニアソフトウェアエンジニア",
     "jobDescriptionHint": "職務内容と応募要件を含む求人情報の全文を貼り付けてください（50文字以上）。",
     "steps": {
       "label": "カスタマイズの流れ",
@@ -856,6 +929,19 @@
       "unavailable": "ページ調整は利用できません",
       "finalOver": "書き換え後にページ数の上限を超える可能性があります",
       "notRechecked": "書き換え後のページ数上限への収まりは再確認されていません"
+    },
+    "rating": {
+      "prompt": "この結果を評価:",
+      "thanks": "フィードバックありがとうございます！",
+      "good": "良い",
+      "bad": "要改善",
+      "error": "評価を保存できませんでした。"
+    },
+    "applied": {
+      "bannerTitle": "履歴書をカスタマイズしました",
+      "bannerDescription": "{count}件の変更を適用しました。",
+      "bannerNone": "変更は適用されませんでした。",
+      "dismiss": "閉じる"
     }
   },
   "settings": {
@@ -894,7 +980,10 @@
       "resumes": "履歴書",
       "jobs": "求人",
       "improvements": "改善",
-      "masterResume": "マスター履歴書"
+      "masterResume": "マスター履歴書",
+      "sessionCost": "セッション費用",
+      "sessionCalls": "このセッションで{count}回の呼び出し",
+      "sessionReset": "リセット"
     },
     "statusValues": {
       "healthy": "正常",
@@ -987,7 +1076,11 @@
       },
       "healthWarnings": {
         "empty_content": "ヘルスチェックで空の内容が返されました。"
-      }
+      },
+      "openRouterSelectModel": "モデルを選択",
+      "openRouterPrice": "入力 {in} / 出力 {out}（100万トークンあたり）",
+      "openRouterLoading": "モデルを読み込み中…",
+      "openRouterError": "モデルを読み込めませんでした。モデル名を手動で入力してください。"
     },
     "chatgpt": {
       "continue": "ChatGPT で続行",
@@ -1028,6 +1121,10 @@
       "interviewPrep": {
         "label": "面接準備",
         "description": "保存済みのカスタマイズ履歴書と一緒に面接準備を自動生成します"
+      },
+      "preserveEducation": {
+        "label": "学歴を保持",
+        "description": "カスタマイズ中に学歴の項目を変更しません。レジュメビルダーで手動編集は引き続き可能です。"
       }
     },
     "promptSettings": {
@@ -1092,7 +1189,8 @@
     "setDefaultSuccess": "このマスターがカスタマイズのデフォルトになりました。",
     "setDefaultError": "この履歴書をデフォルトのマスターに設定できませんでした。もう一度お試しください。",
     "duplicate": "複製",
-    "duplicateError": "この履歴書を複製できませんでした。もう一度お試しください。"
+    "duplicateError": "この履歴書を複製できませんでした。もう一度お試しください。",
+    "viewCoverLetter": "カバーレターを表示"
   },
   "preview": {
     "margins": "余白",
@@ -1121,8 +1219,8 @@
       "earlierExperience": "以前の職歴",
       "education": "学歴",
       "projects": "プロジェクト",
-      "skills": "スキル・受賞歴",
-      "skillsOnly": "スキル",
+      "skills": "スキル",
+      "skillsOnly": "技術スキル",
       "certifications": "研修・資格",
       "languages": "言語",
       "awards": "受賞歴",
@@ -1132,7 +1230,10 @@
       "name": "あなたの名前"
     },
     "additional": {
-      "technicalSkills": "技術スキル"
+      "technicalSkills": "技術スキル",
+      "languages": "言語",
+      "certifications": "資格・研修",
+      "awards": "受賞歴"
     },
     "additionalLabels": {
       "technicalSkills": "技術スキル：",
@@ -1150,6 +1251,16 @@
       "placeholder": "設定でカバーレター生成を有効にして履歴書をカスタマイズすると、ここに表示されます...",
       "tip": "ヒント：良いカバーレターは通常300〜400語程度です。必要に応じて編集してください。"
     },
+    "signature": {
+      "label": "署名",
+      "placeholder": "敬具、\n\n{name}",
+      "tip": "ヒント：{name} はプレースホルダーです。編集してカスタマイズしてください。",
+      "save": "署名を保存",
+      "saving": "保存中...",
+      "saveForThisLetter": "このレターに保存",
+      "setDefault": "デフォルトに設定",
+      "defaultHint": "「デフォルトに設定」すると、特定のレターに別の署名を保存しない限り、すべてのカバーレターにこの署名が適用されます。"
+    },
     "preview": {
       "defaultName": "あなたの名前",
       "emptyTitle": "まだカバーレターがありません。",
@@ -1158,7 +1269,63 @@
     "print": {
       "emptyContent": "カバーレターの内容がありません。"
     },
-    "copied": "コピーしました！"
+    "copied": "コピーしました！",
+    "wizard": {
+      "title": "カバーレターをパーソナライズ",
+      "subtitle": "これらの質問に答えて、300〜400語のカスタマイズされたカバーレターを生成します。",
+      "questions": {
+        "companyConnection": {
+          "label": "企業とのつながり",
+          "question": "なぜこの企業なのですか？応募を決めた具体的なプロジェクト、製品、価値観、最近のニュースはありますか？",
+          "placeholder": "例：以前からXの取り組みに注目しており..."
+        },
+        "heroAchievement": {
+          "label": "主要な実績",
+          "question": "履歴書の中で、この職務に最も合う1〜2件の実績は何ですか？その背景にあるストーリーは？",
+          "placeholder": "例：〜の移行を主導しました..."
+        },
+        "missingLink": {
+          "label": "ギャップを埋める",
+          "question": "求人票にあるスキルやツールで、履歴書では目立たないがあなたが持っているものはありますか？",
+          "placeholder": "例：個人プロジェクトでXを使いましたが履歴書には載っていません..."
+        },
+        "careerNarrative": {
+          "label": "キャリアストーリー",
+          "question": "この転職の背景はありますか（キャリアチェンジ、昇進、業界転換など）？動機は何ですか？",
+          "placeholder": "例：Xで3年働いた後、〜の理由でYへ移行しています..."
+        },
+        "formatting": {
+          "label": "書式",
+          "fontLabel": "フォント",
+          "fontSizeLabel": "フォントサイズ",
+          "fonts": ["Georgia", "Arial", "Calibri", "Times New Roman", "Garamond"],
+          "fontSizes": ["10.5pt", "11pt", "11.5pt", "12pt"]
+        },
+        "referenceLine": {
+          "label": "参照行",
+          "jobTitleLabel": "正確な職種名",
+          "jobTitlePlaceholder": "例：シニアソフトウェアエンジニア",
+          "companyNameLabel": "会社名",
+          "companyNamePlaceholder": "例：Stripe"
+        }
+      },
+      "actions": {
+        "generate": "カバーレターを生成",
+        "generating": "生成中...",
+        "regenerate": "再生成",
+        "regenerating": "再生成中...",
+        "editAnswers": "回答を編集"
+      },
+      "feedback": {
+        "title": "改善の提案",
+        "placeholder": "例：第2段落をより技術的に、フォントをGaramond 11ptに変更",
+        "submit": "フィードバックで再生成",
+        "submitting": "再生成中..."
+      },
+      "errors": {
+        "generateFailed": "カバーレターの生成に失敗しました：{error}"
+      }
+    }
   },
   "outreach": {
     "title": "連絡メール",
@@ -1444,5 +1611,32 @@
       "deleteInProgress": "この求人はカスタマイズ中です。完了してから削除してください。",
       "clearFailed": "キューを削除できませんでした。もう一度お試しください。"
     }
+  },
+  "usage": {
+    "title": "使用状況と費用",
+    "subtitle": "モデルごとの費用・評価・応答時間",
+    "loadError": "使用状況の統計を読み込めませんでした。",
+    "sessionTitle": "現在のセッション",
+    "sessionCost": "セッション費用",
+    "sessionCalls": "このセッションで{count}回の呼び出し",
+    "reset": "セッションをリセット",
+    "modelsTitle": "モデル別",
+    "emptyTitle": "まだ使用状況がありません",
+    "emptyDescription": "テーラリングなどのAI操作を実行すると、モデル別の統計がここに表示されます。",
+    "table": {
+      "model": "モデル",
+      "queries": "クエリ数",
+      "totalCost": "合計費用",
+      "avgCost": "費用/クエリ",
+      "avgLatency": "平均応答",
+      "rating": "評価"
+    }
+  },
+  "coverLetterViewer": {
+    "loading": "カバーレターを読み込んでいます...",
+    "notFound": "この履歴書のカバーレターが見つかりません。",
+    "backToResume": "履歴書に戻る",
+    "download": "カバーレターをダウンロード",
+    "failedToLoad": "カバーレターの読み込みに失敗しました。"
   }
 }

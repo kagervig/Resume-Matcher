@@ -13,6 +13,7 @@ from app.schemas import (
     ApplicationListResponse,
     ApplicationResponse,
     ApplicationUpdate,
+    ApplyFromResumeRequest,
     BulkDelete,
     BulkStatusUpdate,
     ManualApplicationCreate,
@@ -92,6 +93,28 @@ async def create_application(request: ManualApplicationCreate) -> ApplicationRes
             detail="Failed to create application. Please try again.",
         ) from e
 
+    return ApplicationResponse(**application)
+
+
+@router.post("/from-resume", response_model=ApplicationResponse)
+async def apply_from_resume(request: ApplyFromResumeRequest) -> ApplicationResponse:
+    """Mark a tailored resume as applied, creating or promoting its card.
+
+    Returns 404 when the resume has no improvement record (no job to track).
+    """
+    try:
+        application = await db.apply_resume(request.resume_id)
+    except DatabaseBusyError:
+        raise
+    except Exception as e:
+        logger.exception("Failed to apply resume %s", request.resume_id)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to mark as applied. Please try again.",
+        ) from e
+
+    if application is None:
+        raise HTTPException(status_code=404, detail="Resume is not linked to a job")
     return ApplicationResponse(**application)
 
 

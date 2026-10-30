@@ -73,6 +73,8 @@ export interface ResumeDiffSummary {
   descriptions_modified: number;
   certifications_added: number;
   high_risk_changes: number;
+  awards_added?: number;
+  languages_added?: number;
 }
 
 export interface ResumeFieldDiff {
@@ -146,6 +148,7 @@ export interface Data {
   detailed_changes?: ResumeFieldDiff[];
   ats_score?: ATSScore;
   bullet_selection?: BulletSelectionSummary | null;
+  warnings?: string[];
 }
 
 export interface ImprovedResult {

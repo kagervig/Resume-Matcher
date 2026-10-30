@@ -34,10 +34,23 @@ async def upload_job_descriptions(request: JobUploadRequest) -> JobUploadRespons
     descriptions = [jd.strip() for jd in request.job_descriptions]
     if any(not jd for jd in descriptions):
         raise HTTPException(status_code=400, detail="Empty job description")
+    # User-provided values are also stored under user_* keys so later keyword
+    # extraction can never clobber them, and the title can prefer them.
+    metadata: dict[str, str] = {}
+    company = (request.company or "").strip()
+    role = (request.role or "").strip()
+    if company:
+        metadata["company"] = company
+        metadata["user_company"] = company
+    if role:
+        metadata["role"] = role
+        metadata["user_role"] = role
+
     try:
         jobs = await db.create_jobs(
             contents=descriptions,
             resume_id=request.resume_id,
+            metadata=metadata or None,
         )
     except DatabaseBusyError:
         raise

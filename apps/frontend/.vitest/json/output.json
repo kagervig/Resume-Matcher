@@ -1,0 +1,495 @@
+{
+  "numTotalTestSuites": 10,
+  "numPassedTestSuites": 8,
+  "numFailedTestSuites": 2,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 40,
+  "numPassedTests": 37,
+  "numFailedTests": 3,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "snapshot": {
+    "added": 0,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0,
+    "didUpdate": false
+  },
+  "startTime": 1792119130792,
+  "success": false,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["CoverLetterEditor wizard"],
+          "fullName": "CoverLetterEditor wizard renders the idle generate button when content is empty",
+          "status": "passed",
+          "title": "renders the idle generate button when content is empty",
+          "duration": 55.948208999999906,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["CoverLetterEditor wizard"],
+          "fullName": "CoverLetterEditor wizard shows the tailor-first guidance and no generate button when not tailored",
+          "status": "passed",
+          "title": "shows the tailor-first guidance and no generate button when not tailored",
+          "duration": 2.1354160000000775,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["CoverLetterEditor wizard"],
+          "fullName": "CoverLetterEditor wizard transitions to the wizard when the generate button is clicked",
+          "status": "passed",
+          "title": "transitions to the wizard when the generate button is clicked",
+          "duration": 11.334542000000056,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["CoverLetterEditor wizard"],
+          "fullName": "CoverLetterEditor wizard transitions to the done state after a successful generation",
+          "status": "passed",
+          "title": "transitions to the done state after a successful generation",
+          "duration": 18.098833000000013,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["CoverLetterEditor wizard"],
+          "fullName": "CoverLetterEditor wizard regenerates with the typed feedback and stored context",
+          "status": "passed",
+          "title": "regenerates with the typed feedback and stored context",
+          "duration": 10.259667000000036,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1792119132133,
+      "endTime": 1792119132230.2598,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/cover-letter-editor-wizard.test.tsx"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["builder attachment ownership"],
+          "fullName": "builder attachment ownership clears cover-letter when the next document has no value",
+          "status": "passed",
+          "title": "clears cover-letter when the next document has no value",
+          "duration": 1117.3129999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment ownership"],
+          "fullName": "builder attachment ownership clears outreach when the next document has no value",
+          "status": "passed",
+          "title": "clears outreach when the next document has no value",
+          "duration": 19.61979199999996,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment ownership"],
+          "fullName": "builder attachment ownership ignores a late cover-letter generation result after changing documents",
+          "status": "passed",
+          "title": "ignores a late cover-letter generation result after changing documents",
+          "duration": 33.95229099999983,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment ownership"],
+          "fullName": "builder attachment ownership ignores a late outreach generation result after changing documents",
+          "status": "passed",
+          "title": "ignores a late outreach generation result after changing documents",
+          "duration": 28.152207999999973,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment ownership"],
+          "fullName": "builder attachment ownership ignores a late interview-prep generation result after changing documents",
+          "status": "passed",
+          "title": "ignores a late interview-prep generation result after changing documents",
+          "duration": 31.7331250000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment ownership"],
+          "fullName": "builder attachment ownership ignores a late generation error after changing documents",
+          "status": "passed",
+          "title": "ignores a late generation error after changing documents",
+          "duration": 28.263791999999967,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder panels"],
+          "fullName": "builder panels renders the cover-letter generate controls in one panel and keeps the output panel empty",
+          "status": "passed",
+          "title": "renders the cover-letter generate controls in one panel and keeps the output panel empty",
+          "duration": 16.205416999999898,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder panels"],
+          "fullName": "builder panels renders the outreach generate controls in one panel and keeps the output panel empty",
+          "status": "passed",
+          "title": "renders the outreach generate controls in one panel and keeps the output panel empty",
+          "duration": 16.390290999999934,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder panels"],
+          "fullName": "builder panels renders the interview-prep generate controls in one panel and keeps the output panel empty",
+          "status": "passed",
+          "title": "renders the interview-prep generate controls in one panel and keeps the output panel empty",
+          "duration": 15.527249999999867,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder preview tabs"],
+          "fullName": "builder preview tabs enables the cover-letter tab on a tailored resume even when no cover letter exists",
+          "status": "passed",
+          "title": "enables the cover-letter tab on a tailored resume even when no cover letter exists",
+          "duration": 17.16175000000021,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder preview tabs"],
+          "fullName": "builder preview tabs disables the cover-letter tab on a master resume when no cover letter exists",
+          "status": "passed",
+          "title": "disables the cover-letter tab on a master resume when no cover letter exists",
+          "duration": 9.083374999999933,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder preview tabs"],
+          "fullName": "builder preview tabs names the tab strip after the Preview heading and points only the selected tab at the panel",
+          "status": "passed",
+          "title": "names the tab strip after the Preview heading and points only the selected tab at the panel",
+          "duration": 11.150666000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder footer"],
+          "fullName": "builder footer has no footer bar: the page frame ends with the panel grid",
+          "status": "passed",
+          "title": "has no footer bar: the page frame ends with the panel grid",
+          "duration": 6.16620799999987,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment persistence"],
+          "fullName": "builder attachment persistence ignores a late save completion after changing documents",
+          "status": "passed",
+          "title": "ignores a late save completion after changing documents",
+          "duration": 20.578958000000057,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment persistence"],
+          "fullName": "builder attachment persistence saves edited cover content before requesting its PDF",
+          "status": "failed",
+          "title": "saves edited cover content before requesting its PDF",
+          "duration": 19.217750000000024,
+          "failureMessages": [
+            "AssertionError: expected \"vi.fn()\" to be called with arguments: [ 'a', 'A4', 'en' ]\n\nReceived:\n\n  1st vi.fn() call:\n\n  [\n    \"a\",\n    \"A4\",\n    \"en\",\n+   null,\n  ]\n\n\nNumber of calls: 1\n\n    at Proxy.<anonymous> (file:///Users/kristianallin/Code/Resume-Matcher/apps/frontend/node_modules/vitest/dist/chunks/index.C4tKZ0yW.js:2233:10)\n    at Proxy.<anonymous> (file:///Users/kristianallin/Code/Resume-Matcher/apps/frontend/node_modules/vitest/dist/chunks/index.C4tKZ0yW.js:1944:14)\n    at Proxy.methodWrapper (file:///Users/kristianallin/Code/Resume-Matcher/apps/frontend/node_modules/chai/index.js:1737:25)\n    at /Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/resume-builder-attachments.test.tsx:362:36\n    at async file:///Users/kristianallin/Code/Resume-Matcher/apps/frontend/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:20"
+          ],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment persistence"],
+          "fullName": "builder attachment persistence aborts cover export and retains its draft when the save fails",
+          "status": "passed",
+          "title": "aborts cover export and retains its draft when the save fails",
+          "duration": 20.862583000000086,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment persistence"],
+          "fullName": "builder attachment persistence keeps a newer same-document edit dirty when an older cover save completes",
+          "status": "passed",
+          "title": "keeps a newer same-document edit dirty when an older cover save completes",
+          "duration": 17.12191699999994,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment persistence"],
+          "fullName": "builder attachment persistence saves the latest cover revision before exporting when editing continues during save",
+          "status": "failed",
+          "title": "saves the latest cover revision before exporting when editing continues during save",
+          "duration": 17.728708000000097,
+          "failureMessages": [
+            "AssertionError: expected \"vi.fn()\" to be called with arguments: [ 'a', 'A4', 'en' ]\n\nReceived:\n\n  1st vi.fn() call:\n\n  [\n    \"a\",\n    \"A4\",\n    \"en\",\n+   null,\n  ]\n\n\nNumber of calls: 1\n\n    at Proxy.<anonymous> (file:///Users/kristianallin/Code/Resume-Matcher/apps/frontend/node_modules/vitest/dist/chunks/index.C4tKZ0yW.js:2233:10)\n    at Proxy.<anonymous> (file:///Users/kristianallin/Code/Resume-Matcher/apps/frontend/node_modules/vitest/dist/chunks/index.C4tKZ0yW.js:1944:14)\n    at Proxy.methodWrapper (file:///Users/kristianallin/Code/Resume-Matcher/apps/frontend/node_modules/chai/index.js:1737:25)\n    at /Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/resume-builder-attachments.test.tsx:422:36\n    at async file:///Users/kristianallin/Code/Resume-Matcher/apps/frontend/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:20"
+          ],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment persistence"],
+          "fullName": "builder attachment persistence serializes an existing cover save ahead of the export flush",
+          "status": "failed",
+          "title": "serializes an existing cover save ahead of the export flush",
+          "duration": 23.235334000000194,
+          "failureMessages": [
+            "AssertionError: expected \"vi.fn()\" to be called with arguments: [ 'a', 'A4', 'en' ]\n\nReceived:\n\n  1st vi.fn() call:\n\n  [\n    \"a\",\n    \"A4\",\n    \"en\",\n+   null,\n  ]\n\n\nNumber of calls: 1\n\n    at Proxy.<anonymous> (file:///Users/kristianallin/Code/Resume-Matcher/apps/frontend/node_modules/vitest/dist/chunks/index.C4tKZ0yW.js:2233:10)\n    at Proxy.<anonymous> (file:///Users/kristianallin/Code/Resume-Matcher/apps/frontend/node_modules/vitest/dist/chunks/index.C4tKZ0yW.js:1944:14)\n    at Proxy.methodWrapper (file:///Users/kristianallin/Code/Resume-Matcher/apps/frontend/node_modules/chai/index.js:1737:25)\n    at /Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/resume-builder-attachments.test.tsx:446:36\n    at async file:///Users/kristianallin/Code/Resume-Matcher/apps/frontend/node_modules/vitest/dist/chunks/run.BTlFXlnv.js:2783:20"
+          ],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment persistence"],
+          "fullName": "builder attachment persistence flushes outreach before Back and offers local-draft leave when it fails",
+          "status": "passed",
+          "title": "flushes outreach before Back and offers local-draft leave when it fails",
+          "duration": 14.506542000000081,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment persistence"],
+          "fullName": "builder attachment persistence warns that attachment edits have no backup when browser storage and save both fail",
+          "status": "passed",
+          "title": "warns that attachment edits have no backup when browser storage and save both fail",
+          "duration": 14.117082999999866,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["builder attachment persistence"],
+          "fullName": "builder attachment persistence requires consent before restoring a resume-scoped attachment draft",
+          "status": "passed",
+          "title": "requires consent before restoring a resume-scoped attachment draft",
+          "duration": 15.081291999999848,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [],
+          "fullName": "does not expose attachment state from an unusable resume response",
+          "status": "passed",
+          "title": "does not expose attachment state from an unusable resume response",
+          "duration": 3.381249999999909,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [],
+          "fullName": "waits for an earlier cover save even after reverting to the acknowledged baseline",
+          "status": "passed",
+          "title": "waits for an earlier cover save even after reverting to the acknowledged baseline",
+          "duration": 22.05687499999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [],
+          "fullName": "serializes and converges cover-letter edits before Back",
+          "status": "passed",
+          "title": "serializes and converges cover-letter edits before Back",
+          "duration": 22.746834000000035,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [],
+          "fullName": "serializes and converges outreach edits before Back",
+          "status": "passed",
+          "title": "serializes and converges outreach edits before Back",
+          "duration": 20.011124999999993,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [],
+          "fullName": "orders cover-letter generation after prior saves",
+          "status": "passed",
+          "title": "orders cover-letter generation after prior saves",
+          "duration": 24.674958999999944,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [],
+          "fullName": "orders outreach generation after prior saves",
+          "status": "passed",
+          "title": "orders outreach generation after prior saves",
+          "duration": 22.068416999999954,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["cover-letter save queued during generation"],
+          "fullName": "cover-letter save queued during generation keeps server and editor converged for unchanged content",
+          "status": "passed",
+          "title": "keeps server and editor converged for unchanged content",
+          "duration": 25.885125000000016,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["cover-letter save queued during generation"],
+          "fullName": "cover-letter save queued during generation keeps server and editor converged for edit-before-save content",
+          "status": "passed",
+          "title": "keeps server and editor converged for edit-before-save content",
+          "duration": 29.606709000000137,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["cover-letter save queued during generation"],
+          "fullName": "cover-letter save queued during generation keeps server and editor converged for edit-after-save content",
+          "status": "passed",
+          "title": "keeps server and editor converged for edit-after-save content",
+          "duration": 25.772292000000107,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["outreach save queued during generation"],
+          "fullName": "outreach save queued during generation keeps server and editor converged for unchanged content",
+          "status": "passed",
+          "title": "keeps server and editor converged for unchanged content",
+          "duration": 22.065334000000348,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["outreach save queued during generation"],
+          "fullName": "outreach save queued during generation keeps server and editor converged for edit-before-save content",
+          "status": "passed",
+          "title": "keeps server and editor converged for edit-before-save content",
+          "duration": 26.692417000000205,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["outreach save queued during generation"],
+          "fullName": "outreach save queued during generation keeps server and editor converged for edit-after-save content",
+          "status": "passed",
+          "title": "keeps server and editor converged for edit-after-save content",
+          "duration": 22.72729199999958,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [],
+          "fullName": "retains a matching restored attachment backup when replacement storage writes fail",
+          "status": "passed",
+          "title": "retains a matching restored attachment backup when replacement storage writes fail",
+          "duration": 22.814624999999978,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1792119131179,
+      "endTime": 1792119132982.8147,
+      "status": "failed",
+      "message": "",
+      "name": "/Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/resume-builder-attachments.test.tsx"
+    }
+  ]
+}

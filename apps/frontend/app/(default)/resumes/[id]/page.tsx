@@ -22,6 +22,7 @@ import {
   duplicateResume,
 } from '@/lib/api/resume';
 import { useStatusCache } from '@/lib/context/status-cache';
+import { useResumePreview } from '@/components/common/resume_previewer_context';
 import {
   NotePencil,
   DownloadSimple,
@@ -29,6 +30,8 @@ import {
   PencilSimple,
   Chats,
   Copy,
+  Envelope,
+  X,
 } from '@phosphor-icons/react';
 import { EnrichmentModal } from '@/components/enrichment/enrichment-modal';
 import { useTranslations } from '@/lib/i18n';
@@ -74,8 +77,12 @@ export default function ResumeViewerPage() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitleValue, setEditingTitleValue] = useState('');
   const [isTailoredResume, setIsTailoredResume] = useState(false);
+  const [jobCompany, setJobCompany] = useState<string | null>(null);
+  const [hasCoverLetter, setHasCoverLetter] = useState(false);
+  const [tailorBannerDismissed, setTailorBannerDismissed] = useState(false);
 
   const resumeId = params?.id as string;
+  const { improvedData } = useResumePreview();
   const {
     begin: beginResumeLoad,
     isCurrent: isCurrentResumeLoad,
@@ -114,6 +121,7 @@ export default function ResumeViewerPage() {
     setDuplicateError(null);
     setIsMasterResume(false);
     setIsDefaultMaster(false);
+    setHasCoverLetter(false);
     const token = beginResumeLoad();
     if (token === null) return;
 
@@ -131,8 +139,10 @@ export default function ResumeViewerPage() {
         // Capture title for editable display (always set to clear stale state)
         setResumeTitle(data.title ?? null);
         setIsTailoredResume(Boolean(data.parent_id));
+        setJobCompany(data.job_company ?? null);
         setIsMasterResume(Boolean(data.is_master));
         setIsDefaultMaster(Boolean(data.is_default_master));
+        setHasCoverLetter(Boolean(data.cover_letter));
 
         // Prioritize processed_resume if available (structured JSON)
         if (data.processed_resume) {
@@ -261,6 +271,10 @@ export default function ResumeViewerPage() {
 
   const handleInterviewPrep = () => {
     router.push(`/builder?id=${resumeId}&tab=interview-prep`);
+  };
+
+  const handleViewCoverLetter = () => {
+    router.push(`/resumes/${resumeId}/cover-letter`);
   };
 
   const handleTitleSave = async () => {
@@ -550,6 +564,12 @@ export default function ResumeViewerPage() {
           )}
         </div>
 
+        {isTailoredResume && jobCompany && (
+          <p className="mt-2 font-mono text-sm font-bold uppercase tracking-wide text-steel">
+            {jobCompany}
+          </p>
+        )}
+
         <PageHeader.Actions>
           {isMasterResume && (
             <Button type="button" onClick={() => setShowEnrichmentModal(true)}>
@@ -575,12 +595,48 @@ export default function ResumeViewerPage() {
               {t('interviewPrep.title')}
             </Button>
           )}
+          {hasCoverLetter && (
+            <Button type="button" variant="outline" onClick={handleViewCoverLetter}>
+              <Envelope aria-hidden="true" />
+              {t('resumeViewer.viewCoverLetter')}
+            </Button>
+          )}
           <Button type="button" variant="outline" onClick={handleDownload} disabled={isDownloading}>
             <DownloadSimple aria-hidden="true" />
             {isDownloading ? t('common.generating') : t('resumeViewer.downloadResume')}
           </Button>
         </PageHeader.Actions>
       </PageHeader>
+
+      {!tailorBannerDismissed && improvedData?.data?.resume_id === resumeId && (
+        <div className="px-8 pt-6 md:px-12">
+          <Alert tone="success">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-mono text-sm font-semibold uppercase tracking-wider text-success">
+                  {t('tailor.applied.bannerTitle')}
+                </p>
+                <p className="mt-1 text-sm text-ink-soft">
+                  {(improvedData.data.diff_summary?.total_changes ?? 0) > 0
+                    ? t('tailor.applied.bannerDescription', {
+                        count: String(improvedData.data.diff_summary!.total_changes),
+                      })
+                    : t('tailor.applied.bannerNone')}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={t('tailor.applied.dismiss')}
+                onClick={() => setTailorBannerDismissed(true)}
+              >
+                <X aria-hidden="true" />
+              </Button>
+            </div>
+          </Alert>
+        </div>
+      )}
 
       <div className="px-8 py-6 md:px-12 md:py-8">
         {/* Resume Viewer */}

@@ -59,6 +59,7 @@ def mock_resume_record(sample_resume):
         "processed_data": sample_resume,
         "processing_status": "ready",
         "cover_letter": None,
+        "cover_letter_signature": None,
         "outreach_message": None,
         "interview_prep": None,
         "title": None,
@@ -82,6 +83,60 @@ class TestGetResume:
         assert data["processed_resume"] is not None
         assert data["processed_resume"]["summary"] != ""
         assert data["interview_prep"] is None
+
+    @patch("app.routers.resumes.db", new_callable=AsyncMock)
+    async def test_fetch_tailored_resume_includes_job_company_and_role(
+        self, mock_db, client, mock_resume_record
+    ):
+        mock_db.get_resume.return_value = {
+            **mock_resume_record,
+            "is_master": False,
+            "parent_id": "master-1",
+        }
+        mock_db.get_improvement_by_tailored_resume.return_value = {"job_id": "job-1"}
+        mock_db.get_job.return_value = {"company": "Acme Corp", "role": "Staff Engineer"}
+        async with client:
+            resp = await client.get("/api/v1/resumes", params={"resume_id": "res-123"})
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert data["job_company"] == "Acme Corp"
+        assert data["job_role"] == "Staff Engineer"
+
+    @patch("app.routers.resumes.db", new_callable=AsyncMock)
+    async def test_fetch_tailored_resume_reads_company_role_from_job_keywords(
+        self, mock_db, client, mock_resume_record
+    ):
+        # Many jobs never promote company/role to the top level; the canonical
+        # values live under job_keywords and must still surface in the header.
+        mock_db.get_resume.return_value = {
+            **mock_resume_record,
+            "is_master": False,
+            "parent_id": "master-1",
+        }
+        mock_db.get_improvement_by_tailored_resume.return_value = {"job_id": "job-1"}
+        mock_db.get_job.return_value = {
+            "company": "",
+            "job_keywords": {"company": "Bond", "role": "Fullstack Engineer"},
+        }
+        async with client:
+            resp = await client.get("/api/v1/resumes", params={"resume_id": "res-123"})
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert data["job_company"] == "Bond"
+        assert data["job_role"] == "Fullstack Engineer"
+
+    @patch("app.routers.resumes.db", new_callable=AsyncMock)
+    async def test_fetch_master_resume_has_no_job_company(
+        self, mock_db, client, mock_resume_record
+    ):
+        mock_db.get_resume.return_value = mock_resume_record
+        async with client:
+            resp = await client.get("/api/v1/resumes", params={"resume_id": "res-123"})
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert data["job_company"] is None
+        assert data["job_role"] is None
+        mock_db.get_improvement_by_tailored_resume.assert_not_called()
 
     @patch("app.routers.resumes.db", new_callable=AsyncMock)
     async def test_invalid_interview_prep_does_not_break_fetch(
@@ -217,6 +272,39 @@ class TestUpdateCoverLetter:
                 json={"content": "Dear hiring manager..."},
             )
         assert resp.status_code == 200
+
+
+class TestUpdateCoverLetterSignature:
+    """PATCH /api/v1/resumes/{resume_id}/cover-letter-signature"""
+
+    @patch("app.routers.resumes.db", new_callable=AsyncMock)
+    async def test_update_cover_letter_signature(self, mock_db, client, mock_resume_record):
+        mock_db.get_resume.return_value = mock_resume_record
+        mock_db.update_resume.return_value = {
+            **mock_resume_record,
+            "cover_letter_signature": "Yours sincerely,\n\nJane Doe",
+        }
+        async with client:
+            resp = await client.patch(
+                "/api/v1/resumes/res-123/cover-letter-signature",
+                json={"content": "Yours sincerely,\n\nJane Doe"},
+            )
+        assert resp.status_code == 200
+        mock_db.update_resume.assert_called_once_with(
+            "res-123", {"cover_letter_signature": "Yours sincerely,\n\nJane Doe"}
+        )
+
+    @patch("app.routers.resumes.db", new_callable=AsyncMock)
+    async def test_update_cover_letter_signature_not_found(
+        self, mock_db, client, mock_resume_record
+    ):
+        mock_db.get_resume.return_value = None
+        async with client:
+            resp = await client.patch(
+                "/api/v1/resumes/res-123/cover-letter-signature",
+                json={"content": "Yours sincerely,\n\nJane"},
+            )
+        assert resp.status_code == 404
 
 
 class TestUpdateOutreachMessage:

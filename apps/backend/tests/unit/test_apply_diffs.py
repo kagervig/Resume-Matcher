@@ -222,6 +222,105 @@ class TestApplyDiffsAddSkill:
         assert "Kubernetes" not in result["additional"]["technicalSkills"]
 
 
+class TestApplyDiffsRemoveSkill:
+    """Tests for removing irrelevant skills from the technical skills list."""
+
+    def test_remove_skill_from_technical_skills(self, sample_resume):
+        # "Redis" is in sample_resume but not a JD-relevant target
+        changes = [
+            ResumeChange(
+                path="additional.technicalSkills",
+                action="remove_skill",
+                original=None,
+                value="Redis",
+                reason="Not relevant to this frontend role",
+            )
+        ]
+        result, applied, rejected = apply_diffs(
+            sample_resume,
+            changes,
+            allowed_skill_targets=[{"skill": "Python"}],
+        )
+        assert len(applied) == 1
+        assert len(rejected) == 0
+        assert "Redis" not in result["additional"]["technicalSkills"]
+
+    def test_remove_skill_rejects_jd_relevant_skill(self, sample_resume):
+        changes = [
+            ResumeChange(
+                path="additional.technicalSkills",
+                action="remove_skill",
+                original=None,
+                value="Python",
+                reason="Should be blocked — Python is a verified skill target",
+            )
+        ]
+        result, applied, rejected = apply_diffs(
+            sample_resume,
+            changes,
+            allowed_skill_targets=[{"skill": "Python"}],
+        )
+        assert len(applied) == 0
+        assert len(rejected) == 1
+        assert "Python" in result["additional"]["technicalSkills"]
+
+    def test_remove_skill_rejects_nonexistent_skill(self, sample_resume):
+        changes = [
+            ResumeChange(
+                path="additional.technicalSkills",
+                action="remove_skill",
+                original=None,
+                value="COBOL",
+                reason="Skill not present in resume",
+            )
+        ]
+        result, applied, rejected = apply_diffs(
+            sample_resume,
+            changes,
+            allowed_skill_targets=[],
+        )
+        assert len(applied) == 0
+        assert len(rejected) == 1
+
+    def test_remove_skill_case_insensitive_match(self, sample_resume):
+        changes = [
+            ResumeChange(
+                path="additional.technicalSkills",
+                action="remove_skill",
+                original=None,
+                value="redis",
+                reason="Case-insensitive match should still remove",
+            )
+        ]
+        result, applied, rejected = apply_diffs(
+            sample_resume,
+            changes,
+            allowed_skill_targets=[{"skill": "Python"}],
+        )
+        assert len(applied) == 1
+        assert len(rejected) == 0
+        skills_lower = [s.casefold() for s in result["additional"]["technicalSkills"]]
+        assert "redis" not in skills_lower
+
+    def test_remove_skill_rejects_non_skill_path(self, sample_resume):
+        changes = [
+            ResumeChange(
+                path="summary",
+                action="remove_skill",
+                original=None,
+                value="Python",
+                reason="remove_skill only valid on technicalSkills path",
+            )
+        ]
+        result, applied, rejected = apply_diffs(
+            sample_resume,
+            changes,
+            allowed_skill_targets=[],
+        )
+        assert len(applied) == 0
+        assert len(rejected) == 1
+
+
 class TestApplyDiffsReorder:
     """Tests for the 'reorder' action."""
 

@@ -1,11 +1,15 @@
 """LiteLLM wrapper for multi-provider AI support."""
 
+import contextvars
 import hmac
 import json
 import logging
 import re
 import threading
-from collections.abc import Callable
+import time
+import uuid
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from typing import Any, Literal
 from urllib.parse import urlsplit, urlunsplit
 
@@ -1285,6 +1289,84 @@ async def check_llm_health(
         return result
 
 
+# Per-request tagging for recorded LLM calls. Callers that produce a
+# user-facing, rateable result (the tailoring flow) set a request_id so a
+# good/bad rating can be attached later; everything else records untagged.
+_call_context: contextvars.ContextVar[dict[str, Any]] = contextvars.ContextVar(
+    "llm_call_context", default={}
+)
+
+
+@contextmanager
+def llm_call_context(
+    feature: str | None = None, request_id: str | None = None
+) -> Iterator[None]:
+    """Tag every LLM call made inside the block with a feature and request_id."""
+    token = _call_context.set({"feature": feature, "request_id": request_id})
+    try:
+        yield
+    finally:
+        _call_context.reset(token)
+
+
+def _extract_cost(response: Any) -> float | None:
+    """Best-effort USD cost for a completion, or None when unknown.
+
+    Tries LiteLLM's calculator first, then the provider-reported cost that
+    OpenRouter returns in ``_hidden_params``. A zero/unknown cost is None so
+    the UI can distinguish "free/unknown" from a real spend.
+    """
+    try:
+        cost = litellm.completion_cost(completion_response=response)
+        if cost:
+            return float(cost)
+    except Exception:
+        pass
+    hidden = getattr(response, "_hidden_params", None)
+    if isinstance(hidden, dict):
+        reported = hidden.get("response_cost")
+        try:
+            return float(reported) if reported is not None else None
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def _record_call(config: LLMConfig, response: Any, start: float) -> None:
+    """Persist tokens/cost/latency for one completion (best-effort).
+
+    Never raises: a recording failure must not break a completion.
+    """
+    latency_ms = int((time.perf_counter() - start) * 1000)
+    try:
+        from app.database import db
+        from app.services import usage
+
+        ctx = _call_context.get()
+        usage_obj = getattr(response, "usage", None)
+        prompt_tokens = int(getattr(usage_obj, "prompt_tokens", 0) or 0)
+        completion_tokens = int(getattr(usage_obj, "completion_tokens", 0) or 0)
+        total_tokens = int(
+            getattr(usage_obj, "total_tokens", prompt_tokens + completion_tokens) or 0
+        )
+        cost_usd = _extract_cost(response)
+        db.record_llm_call(
+            id=str(uuid.uuid4()),
+            provider=config.provider,
+            model=get_model_name(config),
+            feature=ctx.get("feature"),
+            request_id=ctx.get("request_id"),
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
+            cost_usd=cost_usd,
+            latency_ms=latency_ms,
+        )
+        usage.record_cost(cost_usd)
+    except Exception as e:
+        logging.debug("LLM call recording skipped: %s", e)
+
+
 async def complete(
     prompt: str,
     system_prompt: str | None = None,
@@ -1320,7 +1402,9 @@ async def complete(
             kwargs["temperature"] = temperature
         _apply_reasoning_effort(config, kwargs, config.reasoning_effort, max_tokens)
 
+        start = time.perf_counter()
         response = await _route_acompletion(config, router, **kwargs)
+        _record_call(config, response, start)
 
         content = _extract_choice_text(response.choices[0])
         if not content:
@@ -1920,7 +2004,9 @@ async def complete_json(
             if use_json_mode and not json_mode_failed:
                 kwargs["response_format"] = {"type": "json_object"}
 
+            start = time.perf_counter()
             response = await _route_acompletion(config, router, **kwargs)
+            _record_call(config, response, start)
             # Never parse ``reasoning_content`` as JSON.  If the model has
             # consumed its budget on reasoning but produced no final answer,
             # treat it as an empty completion and retry with the full budget.

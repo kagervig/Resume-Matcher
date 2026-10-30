@@ -32,7 +32,8 @@
     "keysCleared": "API keys cleared successfully",
     "databaseReset": "Database reset successfully",
     "popupBlocked": "Popup blocked. Please allow popups or open this URL manually: {url}",
-    "resumeDeleted": "This resume was deleted. Upload or select another resume."
+    "resumeDeleted": "This resume was deleted. Upload or select another resume.",
+    "noResults": "No results"
   },
   "home": {
     "brandLine1": "Resume",
@@ -61,7 +62,9 @@
     "backToDashboard": "Back to Dashboard",
     "goToSettings": "Go to Settings",
     "applicationTracker": "Application Tracker",
-    "queue": "Tailoring Queue"
+    "queue": "Tailoring Queue",
+    "usage": "Usage",
+    "allResumes": "All Resumes"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -127,7 +130,20 @@
     "setDefault": "Set as default",
     "duplicate": "Duplicate",
     "addMasterTrack": "Add master track",
-    "masterLimitReached": "Up to {max} master resumes"
+    "masterLimitReached": "Up to {max} master resumes",
+    "missionControl": "Mission Control",
+    "pendingApplications": "Pending Applications",
+    "pendingCount": "{count} pending",
+    "appliedCount": "{count} applied",
+    "iApplied": "I Applied",
+    "iApplying": "Marking...",
+    "iAppliedError": "Could not mark as applied. Please try again.",
+    "viewAllResumes": "All Resumes",
+    "generateNew": "Generate New Resume",
+    "sessionCost": "Session Cost",
+    "sessionCalls": "{count} calls",
+    "pending": "Pending",
+    "applied": "Applied"
   },
   "builder": {
     "panels": {
@@ -188,7 +204,8 @@
         "languages": "English\nSpanish",
         "certifications": "AWS Solution Architect\nGoogle Analytics",
         "awards": "Employee of the Month\nHackathon Winner"
-      }
+      },
+      "toggleDescription": "Show in resume"
     },
     "customSections": {
       "dialogTitle": "Add Custom Section",
@@ -309,6 +326,18 @@
       }
     },
     "jdMatch": {
+      "summary": {
+        "title": "JD Summary",
+        "description": "An AI digest of this job description — the gist, core competencies, and salient keywords.",
+        "generate": "Summarize JD",
+        "regenerate": "Regenerate",
+        "generating": "Summarizing…",
+        "competenciesHeading": "Core competencies",
+        "keywordsHeading": "Salient keywords",
+        "generateFailed": "Could not generate the summary. Please try again.",
+        "loadFailed": "Could not load the summary.",
+        "empty": "No summary yet. Generate one to digest this job description."
+      },
       "yourResume": "Your Resume",
       "matchingKeywordsHighlighted": "(matching keywords highlighted)",
       "jobDescriptionTitle": "Job Description",
@@ -398,6 +427,7 @@
         "fields": {
           "institution": "Institution",
           "degree": "Degree",
+          "grade": "Grade / GPA",
           "description": "Description",
           "descriptionOptional": "Description (Optional)"
         },
@@ -405,6 +435,7 @@
           "institution": "University Name",
           "degree": "Bachelor of Science",
           "years": "Aug 2016 - May 2020",
+          "grade": "3.9 / 4.0",
           "description": "Additional details..."
         }
       },
@@ -513,7 +544,35 @@
       "effectiveHeaderFont": "Header Font",
       "effectiveBodyFont": "Body Font",
       "compactHint": "Compact mode tightens spacing and line height. Margins and base font size stay literal.",
-      "resetDefaults": "Reset to Defaults"
+      "resetDefaults": "Reset to Defaults",
+      "personalInfo": {
+        "title": "Personal Info",
+        "nameStyle": "Name style",
+        "layout": "Contact layout",
+        "fields": "Include fields",
+        "nameStyles": {
+          "large": "Large",
+          "centered": "Centered",
+          "match": "Match"
+        },
+        "layouts": {
+          "two-line-center": "Center",
+          "two-line-2col": "2 col",
+          "two-line-3col": "3 col",
+          "one-line": "1 line",
+          "two-line-left": "Left",
+          "two-line-right": "Right"
+        },
+        "fieldLabels": {
+          "title": "Title",
+          "email": "Email",
+          "phone": "Phone",
+          "location": "Location",
+          "website": "Website",
+          "linkedin": "LinkedIn",
+          "github": "GitHub"
+        }
+      }
     },
     "personalInfoForm": {
       "placeholders": {
@@ -547,13 +606,17 @@
       "downloadNotAvailable": "Download is only available for saved resumes.",
       "downloadFailed": "Failed to download resume. Please try again.",
       "coverLetterSaveFailed": "Failed to save cover letter. Please try again.",
+      "coverLetterSignatureSaveSuccess": "Signature saved",
+      "coverLetterSignatureSaveFailed": "Failed to save signature. Please try again.",
       "coverLetterDownloadRequiresResume": "Save the resume first to download the cover letter.",
       "coverLetterMissing": "No cover letter available. Enable cover letter generation in Settings and tailor a resume.",
       "coverLetterDownloadFailed": "Failed to download cover letter: {error}",
       "outreachSaveFailed": "Failed to save outreach message. Please try again.",
       "coverLetterGenerateFailed": "Failed to generate cover letter: {error}",
       "outreachGenerateFailed": "Failed to generate outreach message: {error}",
-      "interviewPrepGenerateFailed": "Failed to generate interview preparation: {error}"
+      "interviewPrepGenerateFailed": "Failed to generate interview preparation: {error}",
+      "coverLetterSignatureDefaultSaveSuccess": "Saved as the default signature for all cover letters.",
+      "coverLetterSignatureDefaultSaveFailed": "Failed to set default signature. Please try again."
     },
     "leaveWithoutDraft": {
       "title": "Leave With Unsaved Changes?",
@@ -804,7 +867,13 @@
       "languageChanges": "Language Changes",
       "awardChanges": "Award Changes",
       "rejectButton": "Reject & Regenerate",
-      "confirmButton": "Confirm & Save"
+      "confirmButton": "Confirm & Save",
+      "totalChanges": "Total Changes",
+      "awardsAdded": "Awards Added",
+      "languagesAdded": "Languages Added",
+      "noChangesTitle": "No Changes Applied",
+      "noChangesMessage": "The tailored resume is identical to the original. Review the warnings below to understand why.",
+      "warningsList": "Warnings"
     },
     "atsScore": {
       "title": "ATS Score Breakdown",
@@ -840,6 +909,10 @@
     },
     "selectResumeDescription": "Bullets are drawn from this master resume.",
     "tailoringLabel": "Tailoring:",
+    "company": "Company",
+    "companyPlaceholder": "Acme Corp",
+    "role": "Job Title",
+    "rolePlaceholder": "Senior Software Engineer",
     "jobDescriptionHint": "Paste the full job posting, including responsibilities and requirements (at least 50 characters).",
     "steps": {
       "label": "How tailoring works",
@@ -856,6 +929,19 @@
       "unavailable": "Page fit unavailable",
       "finalOver": "May run over the page limit after rewriting",
       "notRechecked": "Page fit not re-checked after rewriting"
+    },
+    "rating": {
+      "prompt": "Rate this result:",
+      "thanks": "Thanks for the feedback!",
+      "good": "Good",
+      "bad": "Needs work",
+      "error": "Couldn't save rating."
+    },
+    "applied": {
+      "bannerTitle": "Resume tailored",
+      "bannerDescription": "{count} change(s) applied.",
+      "bannerNone": "No changes were applied.",
+      "dismiss": "Dismiss"
     }
   },
   "settings": {
@@ -894,7 +980,10 @@
       "resumes": "Resumes",
       "jobs": "Jobs",
       "improvements": "Improvements",
-      "masterResume": "Master Resume"
+      "masterResume": "Master Resume",
+      "sessionCost": "Session Cost",
+      "sessionCalls": "{count} calls this session",
+      "sessionReset": "Reset"
     },
     "statusValues": {
       "healthy": "Healthy",
@@ -987,7 +1076,11 @@
       },
       "healthWarnings": {
         "empty_content": "LLM returned empty content for the health check."
-      }
+      },
+      "openRouterSelectModel": "Select a model",
+      "openRouterPrice": "{in} in / {out} out per 1M tokens",
+      "openRouterLoading": "Loading models…",
+      "openRouterError": "Couldn't load models — enter the model name manually."
     },
     "chatgpt": {
       "continue": "Continue with ChatGPT",
@@ -1028,6 +1121,10 @@
       "interviewPrep": {
         "label": "Interview Preparation",
         "description": "Automatically generate interview preparation alongside saved tailored resumes"
+      },
+      "preserveEducation": {
+        "label": "Preserve Education",
+        "description": "Keep education entries unchanged during tailoring. You can still edit them manually in the resume builder."
       }
     },
     "promptSettings": {
@@ -1092,7 +1189,8 @@
     "setDefaultSuccess": "This master is now the default for tailoring.",
     "setDefaultError": "Could not make this resume the default master. Please try again.",
     "duplicate": "Duplicate",
-    "duplicateError": "Could not duplicate this resume. Please try again."
+    "duplicateError": "Could not duplicate this resume. Please try again.",
+    "viewCoverLetter": "View Cover Letter"
   },
   "preview": {
     "margins": "Margins",
@@ -1121,8 +1219,8 @@
       "earlierExperience": "Earlier experience",
       "education": "Education",
       "projects": "Projects",
-      "skills": "Skills & Awards",
-      "skillsOnly": "Skills",
+      "skills": "Skills",
+      "skillsOnly": "Technical Skills",
       "certifications": "Training & Certifications",
       "languages": "Languages",
       "awards": "Awards",
@@ -1132,7 +1230,10 @@
       "name": "Your Name"
     },
     "additional": {
-      "technicalSkills": "Technical Skills"
+      "technicalSkills": "Technical Skills",
+      "languages": "Languages",
+      "certifications": "Certifications & Training",
+      "awards": "Awards"
     },
     "additionalLabels": {
       "technicalSkills": "Technical Skills:",
@@ -1151,6 +1252,16 @@
       "placeholder": "Your cover letter will appear here after tailoring your resume with cover letter generation enabled...",
       "tip": "TIP: A good cover letter is typically 300-400 words. Edit as needed to personalize."
     },
+    "signature": {
+      "label": "Signature",
+      "placeholder": "Yours sincerely,\n\n{name}",
+      "tip": "TIP: Use {name} as a placeholder — it will render as-is. Edit to personalise.",
+      "save": "Save signature",
+      "saving": "Saving signature",
+      "saveForThisLetter": "Save for this letter",
+      "setDefault": "Set as default",
+      "defaultHint": "\"Set as default\" applies this signature to all cover letters unless you save a different one for a specific letter."
+    },
     "preview": {
       "defaultName": "Your Name",
       "emptyTitle": "No cover letter content yet.",
@@ -1158,6 +1269,62 @@
     },
     "print": {
       "emptyContent": "No cover letter content available."
+    },
+    "wizard": {
+      "title": "Personalise Your Cover Letter",
+      "subtitle": "Answer these questions to generate a tailored 300-400 word cover letter.",
+      "questions": {
+        "companyConnection": {
+          "label": "Company Connection",
+          "question": "Why this company? Is there a specific project, product, value, or recent news that made you apply?",
+          "placeholder": "e.g. I've been following your work on X since..."
+        },
+        "heroAchievement": {
+          "label": "Hero Achievement",
+          "question": "Which 1-2 achievements on your resume best fit this role? What was the story behind them?",
+          "placeholder": "e.g. Led the migration of..."
+        },
+        "missingLink": {
+          "label": "Bridging the Gap",
+          "question": "Is there a skill or tool in the job description not prominent on your resume but that you have?",
+          "placeholder": "e.g. I've used X in side projects but it's not on my resume..."
+        },
+        "careerNarrative": {
+          "label": "Career Narrative",
+          "question": "Is there any context for this move -- career change, step up, industry shift? What's your motivation?",
+          "placeholder": "e.g. After 3 years in X I'm moving toward Y because..."
+        },
+        "formatting": {
+          "label": "Formatting",
+          "fontLabel": "Font",
+          "fontSizeLabel": "Font Size",
+          "fonts": ["Georgia", "Arial", "Calibri", "Times New Roman", "Garamond"],
+          "fontSizes": ["10.5pt", "11pt", "11.5pt", "12pt"]
+        },
+        "referenceLine": {
+          "label": "Reference Line",
+          "jobTitleLabel": "Exact Job Title",
+          "jobTitlePlaceholder": "e.g. Senior Software Engineer",
+          "companyNameLabel": "Company Name",
+          "companyNamePlaceholder": "e.g. Stripe"
+        }
+      },
+      "actions": {
+        "generate": "Generate Cover Letter",
+        "generating": "Generating...",
+        "regenerate": "Regenerate",
+        "regenerating": "Regenerating...",
+        "editAnswers": "Edit Answers"
+      },
+      "feedback": {
+        "title": "Suggestions for Improvement",
+        "placeholder": "e.g. Make paragraph 2 more technical, change font to Garamond 11pt",
+        "submit": "Regenerate with Feedback",
+        "submitting": "Regenerating..."
+      },
+      "errors": {
+        "generateFailed": "Failed to generate cover letter: {error}"
+      }
     }
   },
   "outreach": {
@@ -1444,5 +1611,32 @@
       "deleteInProgress": "This job is being tailored. Remove it once it finishes.",
       "clearFailed": "Couldn't clear the queue. Please try again."
     }
+  },
+  "usage": {
+    "title": "Usage & Costs",
+    "subtitle": "Per-model spending, ratings, and response times",
+    "loadError": "Couldn't load usage stats.",
+    "sessionTitle": "Current Session",
+    "sessionCost": "Session cost",
+    "sessionCalls": "{count} calls this session",
+    "reset": "Reset session",
+    "modelsTitle": "By Model",
+    "emptyTitle": "No usage yet",
+    "emptyDescription": "Run a tailor or other AI action and per-model stats will appear here.",
+    "table": {
+      "model": "Model",
+      "queries": "Queries",
+      "totalCost": "Total cost",
+      "avgCost": "Cost / query",
+      "avgLatency": "Avg response",
+      "rating": "Rating"
+    }
+  },
+  "coverLetterViewer": {
+    "loading": "Loading Cover Letter...",
+    "notFound": "No cover letter found for this resume.",
+    "backToResume": "Back to Resume",
+    "download": "Download Cover Letter",
+    "failedToLoad": "Failed to load cover letter."
   }
 }

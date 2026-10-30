@@ -117,6 +117,12 @@ export async function createApplication(payload: ManualApplicationCreate): Promi
   return asJson<Application>(res, 'Failed to create application');
 }
 
+// Mark a tailored resume as applied, creating its tracker card.
+export async function applyResume(resumeId: string): Promise<Application> {
+  const res = await apiPost('/applications/from-resume', { resume_id: resumeId });
+  return asJson<Application>(res, 'Failed to mark as applied');
+}
+
 // Fetch a card with its embedded JD + applied resume (for the modal).
 export async function getApplicationDetail(id: string): Promise<ApplicationDetail> {
   const res = await apiFetch(`/applications/${id}`, { credentials: 'include' });

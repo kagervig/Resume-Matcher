@@ -1,5 +1,10 @@
 import React from 'react';
-import { Mail, Phone, MapPin, Globe, Linkedin, Github, ExternalLink } from 'lucide-react';
+import { Github, ExternalLink } from 'lucide-react';
+import {
+  DEFAULT_TEMPLATE_SETTINGS,
+  type PersonalInfoSettings,
+} from '@/lib/types/template-settings';
+import { PersonalInfoHeader } from './personal-info-header';
 import type {
   ResumeData,
   SectionMeta,
@@ -10,6 +15,7 @@ import { formatDateRange } from '@/lib/utils';
 import { DescriptionList } from './description-list';
 import { EarlierExperience, splitCondensed } from './earlier-experience';
 import { RESUME_SECTION, RESUME_SECTION_TITLE, resumeItem } from './page-break-attrs';
+import { useAdditionalGroups } from './use-additional-groups';
 import baseStyles from './styles/_base.module.css';
 import styles from './styles/clean.module.css';
 
@@ -17,6 +23,7 @@ interface ResumeCleanProps {
   earlierExperienceLabel?: string;
   data: ResumeData;
   showContactIcons?: boolean;
+  personalInfoSettings?: PersonalInfoSettings;
   additionalSectionLabels?: Partial<AdditionalSectionLabels>;
 }
 
@@ -35,72 +42,13 @@ interface ResumeCleanProps {
 export const ResumeClean: React.FC<ResumeCleanProps> = ({
   data,
   showContactIcons = false,
+  personalInfoSettings = DEFAULT_TEMPLATE_SETTINGS.personalInfo,
   additionalSectionLabels,
   earlierExperienceLabel,
 }) => {
   const { personalInfo, summary, workExperience, education, personalProjects, additional } = data;
 
   const sortedSections = getSortedSections(data);
-
-  const contactIcons: Record<string, React.ReactNode> = {
-    Email: <Mail size={12} />,
-    Phone: <Phone size={12} />,
-    Location: <MapPin size={12} />,
-    Website: <Globe size={12} />,
-    LinkedIn: <Linkedin size={12} />,
-    GitHub: <Github size={12} />,
-  };
-
-  const renderContactDetail = (label: string, value?: string, hrefPrefix: string = '') => {
-    if (!value) return null;
-
-    let finalHrefPrefix = hrefPrefix;
-    if (
-      ['Website', 'LinkedIn', 'GitHub'].includes(label) &&
-      !value.startsWith('http') &&
-      !value.startsWith('//')
-    ) {
-      finalHrefPrefix = 'https://';
-    }
-
-    const href = finalHrefPrefix + value;
-    const isLink =
-      finalHrefPrefix.startsWith('http') ||
-      finalHrefPrefix.startsWith('mailto:') ||
-      finalHrefPrefix.startsWith('tel:');
-
-    let displayText = value;
-    if (isLink && (label === 'LinkedIn' || label === 'GitHub' || label === 'Website')) {
-      displayText = value.replace(/^https?:\/\//, '').replace(/^www\./, '');
-    }
-
-    return (
-      <span className="inline-flex items-center gap-1">
-        {showContactIcons && contactIcons[label]}
-        {isLink ? (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${baseStyles['resume-link']} hover:underline`}
-          >
-            {displayText}
-          </a>
-        ) : (
-          <span>{displayText}</span>
-        )}
-      </span>
-    );
-  };
-
-  const contactItems = [
-    renderContactDetail('Location', personalInfo?.location),
-    renderContactDetail('Phone', personalInfo?.phone, 'tel:'),
-    renderContactDetail('Email', personalInfo?.email, 'mailto:'),
-    renderContactDetail('LinkedIn', personalInfo?.linkedin),
-    renderContactDetail('GitHub', personalInfo?.github),
-    renderContactDetail('Website', personalInfo?.website),
-  ].filter(Boolean);
 
   // Single-line entry header: COMPANY | Role (left), Location | Dates (right).
   const renderEntryHeader = (
@@ -264,6 +212,9 @@ export const ResumeClean: React.FC<ResumeCleanProps> = ({
               {education.map((edu) => (
                 <div key={edu.id} {...resumeItem()} className={baseStyles['resume-item']}>
                   {renderEntryHeader(edu.institution, edu.degree, undefined, edu.years)}
+                  {edu.grade && (
+                    <p className={`${baseStyles['resume-date']} text-right`}>{edu.grade}</p>
+                  )}
                   {edu.description && (
                     <p className={baseStyles['resume-text-sm']}>{edu.description}</p>
                   )}
@@ -303,24 +254,14 @@ export const ResumeClean: React.FC<ResumeCleanProps> = ({
   return (
     <div className={styles.container}>
       {personalInfo && (
-        <header className={`text-center ${baseStyles['resume-header']}`}>
-          {personalInfo.name && <h1 className={`${styles.name} mb-1`}>{personalInfo.name}</h1>}
-          {personalInfo.title && (
-            <div className={`${styles.tagline} mb-1`}>{personalInfo.title}</div>
-          )}
-          {contactItems.length > 0 && (
-            <div
-              className={`flex flex-wrap justify-center items-center gap-x-2 gap-y-1 ${styles.contactRow}`}
-            >
-              {contactItems.map((item, index) => (
-                <React.Fragment key={index}>
-                  {index > 0 && <span className={styles.sep}>|</span>}
-                  {item}
-                </React.Fragment>
-              ))}
-            </div>
-          )}
-        </header>
+        <PersonalInfoHeader
+          personalInfo={personalInfo}
+          settings={personalInfoSettings}
+          showContactIcons={showContactIcons}
+          nameClassName={styles.name}
+          titleClassName={styles.tagline}
+          separator=" | "
+        />
       )}
 
       {sortedSections
@@ -338,16 +279,13 @@ const AdditionalSection: React.FC<{
   additional: ResumeData['additional'];
   displayName?: string;
   labels?: Partial<AdditionalSectionLabels>;
-}> = ({ additional, displayName = 'Skills & Awards', labels }) => {
-  if (!additional) return null;
+}> = ({ additional, displayName = 'Technical Skills', labels }) => {
+  const { groups, showSubLabels, hasContent } = useAdditionalGroups(
+    additional,
+    additional?.visibility
+  );
 
-  const clean = (items?: string[]) =>
-    (items ?? []).filter((item): item is string => typeof item === 'string' && item.trim() !== '');
-
-  const technicalSkills = clean(additional.technicalSkills);
-  const languages = clean(additional.languages);
-  const certificationsTraining = clean(additional.certificationsTraining);
-  const awards = clean(additional.awards);
+  if (!hasContent) return null;
 
   const mergedLabels: AdditionalSectionLabels = {
     technicalSkills: labels?.technicalSkills ?? 'Technical Skills:',
@@ -356,20 +294,12 @@ const AdditionalSection: React.FC<{
     awards: labels?.awards ?? 'Awards:',
   };
 
-  const hasContent =
-    technicalSkills.length > 0 ||
-    languages.length > 0 ||
-    certificationsTraining.length > 0 ||
-    awards.length > 0;
-
-  if (!hasContent) return null;
-
-  const line = (label: string, items: string[]) =>
-    items.length > 0 ? (
-      <div {...resumeItem()}>
-        <span className={styles.skillLabel}>{label}</span> {items.join(', ')}
-      </div>
-    ) : null;
+  const labelsByKey: Record<string, string> = {
+    technicalSkills: mergedLabels.technicalSkills,
+    languages: mergedLabels.languages,
+    certificationsTraining: mergedLabels.certifications,
+    awards: mergedLabels.awards,
+  };
 
   return (
     <div {...RESUME_SECTION} className={baseStyles['resume-section']}>
@@ -377,10 +307,12 @@ const AdditionalSection: React.FC<{
         {displayName}
       </h3>
       <div className={`${baseStyles['resume-stack']} ${baseStyles['resume-text-sm']}`}>
-        {line(mergedLabels.technicalSkills, technicalSkills)}
-        {line(mergedLabels.languages, languages)}
-        {line(mergedLabels.certifications, certificationsTraining)}
-        {line(mergedLabels.awards, awards)}
+        {groups.map((group) => (
+          <div key={group.key} {...resumeItem()}>
+            {showSubLabels && <span className={styles.skillLabel}>{labelsByKey[group.key]}</span>}{' '}
+            {group.items.join(', ')}
+          </div>
+        ))}
       </div>
     </div>
   );

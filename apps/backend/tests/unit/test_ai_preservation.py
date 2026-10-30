@@ -875,3 +875,156 @@ Jan 2020 - Dec 2020
     result = restore_dates_from_markdown(parsed, markdown)
 
     assert result["workExperience"][0]["years"] == "Jan 2020 - Dec 2020"
+
+
+class TestPreserveEducation:
+    """finalize_ai_resume preserve_education flag."""
+
+    def test_education_copied_verbatim_when_flag_is_true(self) -> None:
+        source = _source_resume()
+        candidate = copy.deepcopy(source)
+        candidate["education"][0]["description"] = "Rewrote with AI"
+        candidate["education"][0]["degree"] = "MBA"
+
+        result = finalize_ai_resume(source, candidate, preserve_education=True)
+
+        assert result["education"] == source["education"]
+
+    def test_education_not_affected_by_candidate_deletion_when_flag_is_true(self) -> None:
+        source = _source_resume()
+        candidate = copy.deepcopy(source)
+        candidate["education"] = []
+
+        result = finalize_ai_resume(source, candidate, preserve_education=True)
+
+        assert result["education"] == source["education"]
+
+    def test_other_sections_still_merged_when_education_is_preserved(self) -> None:
+        source = _source_resume()
+        candidate = copy.deepcopy(source)
+        candidate["education"][0]["description"] = "Rewrote with AI"
+        candidate["workExperience"][0]["description"] = ["Built great APIs", "Documented releases"]
+
+        result = finalize_ai_resume(source, candidate, preserve_education=True)
+
+        assert result["education"] == source["education"]
+        assert result["workExperience"][0]["description"][0] == "Built great APIs"
+
+    def test_education_merge_runs_normally_when_flag_is_false(self) -> None:
+        source = _source_resume()
+        candidate = copy.deepcopy(source)
+        candidate["education"][0]["description"] = "Rewrote with AI"
+
+        result = finalize_ai_resume(source, candidate, preserve_education=False)
+
+        assert result["education"][0]["description"] == "Rewrote with AI"
+
+    def test_preserve_education_is_true_by_default(self) -> None:
+        source = _source_resume()
+        candidate = copy.deepcopy(source)
+        candidate["education"][0]["description"] = "Rewrote with AI"
+
+        result = finalize_ai_resume(source, candidate)
+
+        assert result["education"] == source["education"]
+
+    def test_education_copy_is_independent_of_source(self) -> None:
+        source = _source_resume()
+        candidate = copy.deepcopy(source)
+
+        result = finalize_ai_resume(source, candidate, preserve_education=True)
+        source["education"][0]["description"] = "mutated after finalize"
+
+        assert result["education"][0]["description"] == "Computer science"
+
+
+class TestPreserveOriginalProjects:
+    """Unit tests for _preserve_original_projects."""
+
+    def _original(self) -> dict:
+        return {
+            "personalProjects": [
+                {
+                    "id": 1,
+                    "name": "Parser",
+                    "role": "Maintainer",
+                    "years": "May 2021 - Present",
+                    "github": "github.com/ada/parser",
+                    "website": None,
+                    "description": ["Original bullet"],
+                    "descriptionStyles": ["bullet"],
+                }
+            ]
+        }
+
+    def test_restores_name_changed_by_llm(self) -> None:
+        original = self._original()
+        improved = copy.deepcopy(original)
+        improved["personalProjects"][0]["name"] = "LLM-Renamed Tool"
+
+        result = resumes._preserve_original_projects(original, improved)
+
+        assert result["personalProjects"][0]["name"] == "Parser"
+
+    def test_restores_years_changed_by_llm(self) -> None:
+        original = self._original()
+        improved = copy.deepcopy(original)
+        improved["personalProjects"][0]["years"] = "2022 - Present"
+
+        result = resumes._preserve_original_projects(original, improved)
+
+        assert result["personalProjects"][0]["years"] == "May 2021 - Present"
+
+    def test_restores_github_changed_by_llm(self) -> None:
+        original = self._original()
+        improved = copy.deepcopy(original)
+        improved["personalProjects"][0]["github"] = "github.com/other/repo"
+
+        result = resumes._preserve_original_projects(original, improved)
+
+        assert result["personalProjects"][0]["github"] == "github.com/ada/parser"
+
+    def test_restores_role_changed_by_llm(self) -> None:
+        original = self._original()
+        improved = copy.deepcopy(original)
+        improved["personalProjects"][0]["role"] = "Creator"
+
+        result = resumes._preserve_original_projects(original, improved)
+
+        assert result["personalProjects"][0]["role"] == "Maintainer"
+
+    def test_does_not_overwrite_description(self) -> None:
+        original = self._original()
+        improved = copy.deepcopy(original)
+        improved["personalProjects"][0]["description"] = ["Tailored bullet"]
+
+        result = resumes._preserve_original_projects(original, improved)
+
+        assert result["personalProjects"][0]["description"] == ["Tailored bullet"]
+
+    def test_no_op_when_no_projects(self) -> None:
+        original: dict = {"personalProjects": []}
+        improved = {"personalProjects": [{"name": "Phantom"}]}
+
+        result = resumes._preserve_original_projects(original, improved)
+
+        assert result == improved
+
+    def test_no_op_when_original_is_none(self) -> None:
+        improved = {"personalProjects": [{"name": "Something"}]}
+
+        result = resumes._preserve_original_projects(None, improved)
+
+        assert result == improved
+
+    def test_does_not_mutate_inputs(self) -> None:
+        original = self._original()
+        improved = copy.deepcopy(original)
+        improved["personalProjects"][0]["name"] = "Changed"
+        original_before = copy.deepcopy(original)
+        improved_before = copy.deepcopy(improved)
+
+        resumes._preserve_original_projects(original, improved)
+
+        assert original == original_before
+        assert improved == improved_before

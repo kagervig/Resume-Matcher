@@ -62,7 +62,7 @@ export const DEFAULT_SECTION_META: SectionMeta[] = [
   {
     id: 'additional',
     key: 'additional',
-    displayName: 'Skills & Awards',
+    displayName: 'Skills',
     sectionType: 'stringList',
     isDefault: true,
     isVisible: true,
@@ -73,6 +73,14 @@ export const DEFAULT_SECTION_META: SectionMeta[] = [
 const DEFAULT_SECTION_DISPLAY_NAME_BY_ID: Readonly<Record<string, string>> = Object.freeze(
   Object.fromEntries(DEFAULT_SECTION_META.map((section) => [section.id, section.displayName]))
 );
+
+// Headings a default section shipped with before being renamed. Treated like the
+// current default so an existing resume's stored heading re-localizes instead of
+// being frozen as a user customization. Keyed by section id.
+const LEGACY_DEFAULT_SECTION_DISPLAY_NAMES_BY_ID: Readonly<Record<string, readonly string[]>> =
+  Object.freeze({
+    additional: ['Skills & Awards'],
+  });
 
 const DEFAULT_SECTION_I18N_KEY_BY_ID: Readonly<Record<string, string>> = Object.freeze({
   personalInfo: 'resume.sections.personalInfo',
@@ -88,7 +96,8 @@ const DEFAULT_SECTION_I18N_KEY_BY_ID: Readonly<Record<string, string>> = Object.
  *
  * Rules:
  * - Only affects built-in sections (isDefault === true)
- * - Only overwrites when the displayName still equals the original English default
+ * - Only overwrites when the displayName still equals the current English default
+ *   or a shipped legacy default (so a renamed section migrates to the new label)
  */
 export function localizeDefaultSectionMeta(
   sections: SectionMeta[],
@@ -103,7 +112,10 @@ export function localizeDefaultSectionMeta(
     const defaultDisplayName = DEFAULT_SECTION_DISPLAY_NAME_BY_ID[section.id];
     if (!defaultDisplayName) return section;
 
-    if (section.displayName !== defaultDisplayName) return section;
+    const legacyNames = LEGACY_DEFAULT_SECTION_DISPLAY_NAMES_BY_ID[section.id] ?? [];
+    const isDefaultName =
+      section.displayName === defaultDisplayName || legacyNames.includes(section.displayName);
+    if (!isDefaultName) return section;
 
     return { ...section, displayName: t(i18nKey) };
   });

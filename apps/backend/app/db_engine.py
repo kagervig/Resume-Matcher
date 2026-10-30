@@ -14,7 +14,7 @@ from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.schema import CreateColumn
 
-from app.models import Base, Improvement
+from app.models import Base, Improvement, Resume
 
 __all__ = [
     "Base",
@@ -121,6 +121,7 @@ def _init_postgres(engine: Engine, schema: str | None) -> None:
             conn.exec_driver_sql(f'CREATE SCHEMA IF NOT EXISTS "{schema}"')
         Base.metadata.create_all(conn)
         _add_missing_column(conn, Improvement.__table__.c.ats_score, schema)
+        _add_missing_column(conn, Resume.__table__.c.cover_letter_context, schema)
 
 
 def init_models_sync(engine: Engine, schema: str | None = None) -> None:
@@ -137,6 +138,10 @@ def init_models_sync(engine: Engine, schema: str | None = None) -> None:
         existing_columns = {column["name"] for column in columns}
         if columns and "interview_prep" not in existing_columns:
             conn.exec_driver_sql("ALTER TABLE resumes ADD COLUMN interview_prep TEXT")
+        if columns and "cover_letter_signature" not in existing_columns:
+            conn.exec_driver_sql("ALTER TABLE resumes ADD COLUMN cover_letter_signature TEXT")
+        if columns and "cover_letter_context" not in existing_columns:
+            conn.exec_driver_sql("ALTER TABLE resumes ADD COLUMN cover_letter_context JSON")
         if columns and "processing_token" not in existing_columns:
             conn.exec_driver_sql("ALTER TABLE resumes ADD COLUMN processing_token TEXT")
 

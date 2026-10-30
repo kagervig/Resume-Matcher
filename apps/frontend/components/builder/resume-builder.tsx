@@ -40,15 +40,22 @@ import {
   fetchResume,
   updateResume,
   updateCoverLetter,
+  updateCoverLetterSignature,
   updateOutreachMessage,
   generateCoverLetter,
   generateOutreachMessage,
   generateInterviewPrep,
   fetchJobDescription,
 } from '@/lib/api/resume';
+import type { CoverLetterContext } from '@/lib/api/resume';
+import {
+  fetchDefaultCoverLetterSignature,
+  updateDefaultCoverLetterSignature,
+} from '@/lib/api/config';
 import { JDComparisonView } from './jd-comparison-view';
 import { AtsCheckView } from './ats-check-view';
 import { AtsScorePanel } from './ats-score-panel';
+import { JdSummaryPanel } from './jd-summary-panel';
 import { RegenerateWizard } from './regenerate-wizard';
 import { useRegenerateWizard } from '@/hooks/use-regenerate-wizard';
 import { useTranslations } from '@/lib/i18n';
@@ -279,6 +286,15 @@ const ResumeBuilderContent = () => {
 
   // Cover letter & outreach state
   const [coverLetter, setCoverLetter] = useState('');
+  const [coverLetterSignature, setCoverLetterSignature] = useState('');
+  const [coverLetterContext, setCoverLetterContext] = useState<CoverLetterContext | null>(null);
+  const [isCoverLetterSignatureSaving, setIsCoverLetterSignatureSaving] = useState(false);
+  const [defaultCoverLetterSignature, setDefaultCoverLetterSignature] = useState('');
+  const [isCoverLetterSignatureDefaultSaving, setIsCoverLetterSignatureDefaultSaving] =
+    useState(false);
+  // Latest known global default signature, read during resume load without
+  // retriggering it. A cover letter with no per-resume override falls back here.
+  const defaultSignatureRef = useRef('');
   const [outreachMessage, setOutreachMessage] = useState('');
   const [interviewPrep, setInterviewPrep] = useState<InterviewPrepData | null>(null);
   const [isCoverLetterSaving, setIsCoverLetterSaving] = useState(false);
@@ -301,6 +317,9 @@ const ResumeBuilderContent = () => {
 
   // On-demand generation state
   const [isTailoredResume, setIsTailoredResume] = useState(false);
+  // Company/role of the job a tailored resume targets (shown in the header).
+  const [jobCompany, setJobCompany] = useState<string | null>(null);
+  const [jobRole, setJobRole] = useState<string | null>(null);
   const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false);
   const [isGeneratingOutreach, setIsGeneratingOutreach] = useState(false);
   const [isGeneratingInterviewPrep, setIsGeneratingInterviewPrep] = useState(false);
@@ -413,6 +432,29 @@ const ResumeBuilderContent = () => {
     safeStorage.set(TEMPLATE_SETTINGS_STORAGE_KEY, JSON.stringify(templateSettings));
   }, [templateSettings, templateSettingsLoaded]);
 
+  // Load the global default cover letter signature once; failures are
+  // non-fatal (a missing default just means letters prefill empty).
+  useEffect(() => {
+    let active = true;
+    fetchDefaultCoverLetterSignature()
+      .then((sig) => {
+        if (!active) return;
+        defaultSignatureRef.current = sig;
+        setDefaultCoverLetterSignature(sig);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // If the default arrives after a letter with no signature loaded, prefill it
+  // without clobbering a per-resume override or an in-progress edit.
+  useEffect(() => {
+    if (!defaultCoverLetterSignature) return;
+    setCoverLetterSignature((current) => current || defaultCoverLetterSignature);
+  }, [defaultCoverLetterSignature]);
+
   // Warn user before leaving with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -472,12 +514,18 @@ const ResumeBuilderContent = () => {
           }
           // Track if this is a tailored resume (has parent_id)
           setIsTailoredResume(Boolean(data.parent_id));
+          setJobCompany(data.job_company ?? null);
+          setJobRole(data.job_role ?? null);
           // Store resume title for downloads
           setResumeTitle(data.title ?? null);
           // These values belong to this resume. Explicitly applying empty values
           // prevents the preceding document's attachment from surviving a switch.
           const serverCoverLetter = data.cover_letter ?? '';
           const serverOutreachMessage = data.outreach_message ?? '';
+          // A per-resume signature overrides the global default; otherwise the
+          // letter inherits the default so it applies everywhere unless changed.
+          setCoverLetterSignature(data.cover_letter_signature || defaultSignatureRef.current);
+          setCoverLetterContext(data.cover_letter_context ?? null);
           setCoverLetter(serverCoverLetter);
           setOutreachMessage(serverOutreachMessage);
           attachmentValuesRef.current = {
@@ -1064,6 +1112,41 @@ const ResumeBuilderContent = () => {
     }
   };
 
+  const handleSaveCoverLetterSignature = async (): Promise<void> => {
+    if (!resumeId || loadingState !== 'loaded') return;
+    const activeResumeId = resumeId;
+    try {
+      setIsCoverLetterSignatureSaving(true);
+      await updateCoverLetterSignature(activeResumeId, coverLetterSignature);
+      if (documentIsActiveRef.current) {
+        showNotification(t('builder.alerts.coverLetterSignatureSaveSuccess'), 'success');
+      }
+    } catch (error) {
+      if (!documentIsActiveRef.current) return;
+      console.error('Failed to save cover letter signature:', error);
+      showNotification(t('builder.alerts.coverLetterSignatureSaveFailed'), 'danger');
+    } finally {
+      if (documentIsActiveRef.current) {
+        setIsCoverLetterSignatureSaving(false);
+      }
+    }
+  };
+
+  const handleSetDefaultCoverLetterSignature = async (): Promise<void> => {
+    try {
+      setIsCoverLetterSignatureDefaultSaving(true);
+      const saved = await updateDefaultCoverLetterSignature(coverLetterSignature);
+      defaultSignatureRef.current = saved;
+      setDefaultCoverLetterSignature(saved);
+      showNotification(t('builder.alerts.coverLetterSignatureDefaultSaveSuccess'), 'success');
+    } catch (error) {
+      console.error('Failed to set default cover letter signature:', error);
+      showNotification(t('builder.alerts.coverLetterSignatureDefaultSaveFailed'), 'danger');
+    } finally {
+      setIsCoverLetterSignatureDefaultSaving(false);
+    }
+  };
+
   const flushCoverLetterForExport = async (showFailure = true): Promise<boolean> => {
     while (documentIsActiveRef.current) {
       await coverLetterSaveQueueRef.current;
@@ -1110,7 +1193,14 @@ const ResumeBuilderContent = () => {
       if (!(await flushCoverLetterForExport())) {
         return;
       }
-      const blob = await downloadCoverLetterPdf(resumeId, templateSettings.pageSize, uiLanguage);
+      const blob = coverLetterContext
+        ? await downloadCoverLetterPdf(
+            resumeId,
+            templateSettings.pageSize,
+            uiLanguage,
+            coverLetterContext
+          )
+        : await downloadCoverLetterPdf(resumeId, templateSettings.pageSize, uiLanguage);
       const company = getCompanyFromTitle(resumeTitle);
       const userName = resumeData.personalInfo?.name?.trim() || null;
       const filename = buildResumeFilename(userName, company, resumeId, 'cover-letter');
@@ -1118,7 +1208,14 @@ const ResumeBuilderContent = () => {
     } catch (error) {
       console.error('Failed to download cover letter:', error);
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        const fallbackUrl = getCoverLetterPdfUrl(resumeId, templateSettings.pageSize, uiLanguage);
+        const fallbackUrl = coverLetterContext
+          ? getCoverLetterPdfUrl(
+              resumeId,
+              templateSettings.pageSize,
+              uiLanguage,
+              coverLetterContext
+            )
+          : getCoverLetterPdfUrl(resumeId, templateSettings.pageSize, uiLanguage);
         const didOpen = openUrlInNewTab(fallbackUrl);
         if (!didOpen) {
           showNotification(t('common.popupBlocked', { url: fallbackUrl }), 'warning');
@@ -1380,6 +1477,11 @@ const ResumeBuilderContent = () => {
               {'// '}
               {resumeId ? t('builder.editMode') : t('builder.createAndPreview')}
             </p>
+            {isTailoredResume && (jobRole || jobCompany) && (
+              <p className="basis-full font-mono text-xs font-bold uppercase tracking-wide text-steel">
+                {[jobRole, jobCompany].filter(Boolean).join(' @ ')}
+              </p>
+            )}
             <span role="status">
               {resumeSaveStatus && (
                 <StatusIndicator tone={resumeSaveStatus.tone} live={false}>
@@ -1539,6 +1641,15 @@ const ResumeBuilderContent = () => {
                     onChange={handleCoverLetterChange}
                     onSave={handleSaveCoverLetter}
                     isSaving={isCoverLetterSaving}
+                    signature={coverLetterSignature}
+                    onSignatureChange={setCoverLetterSignature}
+                    onSignatureSave={handleSaveCoverLetterSignature}
+                    isSignatureSaving={isCoverLetterSignatureSaving}
+                    onSignatureSaveDefault={handleSetDefaultCoverLetterSignature}
+                    isSignatureDefaultSaving={isCoverLetterSignatureDefaultSaving}
+                    resumeId={resumeId ?? ''}
+                    initialContext={coverLetterContext}
+                    isTailored={isTailoredResume}
                   />
                 ) : (
                   <GeneratePrompt
@@ -1589,12 +1700,15 @@ const ResumeBuilderContent = () => {
               {activeTab === 'jd-match' && (
                 <div className="space-y-4">
                   {resumeId && jobContextStatus === 'available' && (
-                    <AtsScorePanel
-                      key={resumeId}
-                      resumeId={resumeId}
-                      hasUnsavedChanges={hasUnsavedChanges}
-                      template={templateSettings.template}
-                    />
+                    <>
+                      <AtsScorePanel
+                        key={resumeId}
+                        resumeId={resumeId}
+                        hasUnsavedChanges={hasUnsavedChanges}
+                        template={templateSettings.template}
+                      />
+                      <JdSummaryPanel key={`summary-${resumeId}`} resumeId={resumeId} />
+                    </>
                   )}
 
                   <div className="border-2 border-ink bg-white p-4">
@@ -1694,7 +1808,7 @@ const ResumeBuilderContent = () => {
                   {
                     id: 'cover-letter',
                     label: t('builder.previewTabs.coverLetter'),
-                    disabled: !coverLetter,
+                    disabled: !coverLetter && !isTailoredResume,
                   },
                   {
                     id: 'outreach',
@@ -1744,6 +1858,7 @@ const ResumeBuilderContent = () => {
                     <CoverLetterPreview
                       content={coverLetter}
                       personalInfo={resumeData.personalInfo}
+                      signature={coverLetterSignature || undefined}
                       pageSize={templateSettings.pageSize}
                     />
                   </div>

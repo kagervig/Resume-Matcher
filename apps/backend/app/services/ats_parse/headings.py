@@ -58,7 +58,7 @@ HEADINGS: dict[str, dict[str, tuple[str, ...]]] = {
         "summary": ("resumen", "perfil", "perfil profesional", "sobre mí"),
         "experience": ("experiencia", "experiencia laboral", "experiencia profesional"),
         "education": ("educación", "formación", "formación académica"),
-        "skills": ("habilidades", "competencias", "aptitudes"),
+        "skills": ("habilidades técnicas", "habilidades", "competencias", "aptitudes"),
         "projects": ("proyectos",),
     },
     "fr": {
@@ -72,7 +72,7 @@ HEADINGS: dict[str, dict[str, tuple[str, ...]]] = {
         "summary": ("resumo", "perfil", "sobre mim"),
         "experience": ("experiência", "experiência profissional"),
         "education": ("formação", "educação", "formação acadêmica"),
-        "skills": ("habilidades", "competências"),
+        "skills": ("habilidades técnicas", "habilidades", "competências"),
         "projects": ("projetos",),
     },
     "ja": {
@@ -86,14 +86,14 @@ HEADINGS: dict[str, dict[str, tuple[str, ...]]] = {
         "summary": ("요약", "소개", "자기소개"),
         "experience": ("경력", "경력 사항", "업무 경력"),
         "education": ("학력", "교육"),
-        "skills": ("기술", "보유 기술", "역량"),
+        "skills": ("기술 스킬", "스킬", "기술", "보유 기술", "역량"),
         "projects": ("프로젝트",),
     },
     "zh": {
         "summary": ("个人简介", "简介", "概要", "自我评价"),
         "experience": ("工作经历", "工作经验", "经历"),
         "education": ("教育背景", "教育经历", "学历"),
-        "skills": ("技能", "专业技能"),
+        "skills": ("技能", "专业技能", "技术技能"),
         "projects": ("项目经历", "项目经验", "项目"),
     },
 }

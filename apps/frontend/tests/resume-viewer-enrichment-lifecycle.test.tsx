@@ -38,6 +38,9 @@ vi.mock('@/lib/api/enrichment', () => ({
   generateEnhancements: vi.fn(),
   applyEnhancements: vi.fn(),
 }));
+vi.mock('@/components/common/resume_previewer_context', () => ({
+  useResumePreview: () => ({ improvedData: null, setImprovedData: vi.fn() }),
+}));
 
 const mockedFetchResume = vi.mocked(fetchResume);
 const mockedAnalyzeResume = vi.mocked(analyzeResume);

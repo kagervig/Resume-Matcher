@@ -2,9 +2,10 @@
 
 import React, { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dropdown } from '@/components/ui/dropdown';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { ToggleSwitch } from '@/components/ui/toggle-switch';
-import { CaretDown, CaretUp, ArrowCounterClockwise } from '@phosphor-icons/react';
+import { CaretDown, CaretUp, ArrowCounterClockwise, Minus, Plus } from '@phosphor-icons/react';
 import {
   type TemplateSettings,
   type TemplateType,
@@ -13,6 +14,10 @@ import {
   type HeaderFontFamily,
   type BodyFontFamily,
   type AccentColor,
+  type PersonalInfoLayout,
+  type PersonalInfoNameStyle,
+  type PersonalInfoField,
+  PERSONAL_INFO_FIELDS,
   DEFAULT_TEMPLATE_SETTINGS,
   applyTemplatePreset,
   SECTION_SPACING_MAP,
@@ -118,6 +123,34 @@ export const FormattingControls: React.FC<FormattingControlsProps> = ({ settings
   const handleAccentColorChange = (accentColor: AccentColor) => {
     onChange({ ...settings, accentColor });
   };
+
+  const handlePersonalInfoLayoutChange = (layout: PersonalInfoLayout) => {
+    onChange({ ...settings, personalInfo: { ...settings.personalInfo, layout } });
+  };
+
+  const handlePersonalInfoNameStyleChange = (nameStyle: PersonalInfoNameStyle) => {
+    onChange({ ...settings, personalInfo: { ...settings.personalInfo, nameStyle } });
+  };
+
+  const handlePersonalInfoFieldToggle = (field: PersonalInfoField, enabled: boolean) => {
+    onChange({
+      ...settings,
+      personalInfo: {
+        ...settings.personalInfo,
+        fields: { ...settings.personalInfo.fields, [field]: enabled },
+      },
+    });
+  };
+
+  const PERSONAL_INFO_LAYOUT_OPTIONS: PersonalInfoLayout[] = [
+    'two-line-center',
+    'two-line-2col',
+    'two-line-3col',
+    'one-line',
+    'two-line-left',
+    'two-line-right',
+  ];
+  const PERSONAL_INFO_NAME_STYLES: PersonalInfoNameStyle[] = ['large', 'centered', 'match'];
 
   const handleReset = () => {
     onChange(DEFAULT_TEMPLATE_SETTINGS);
@@ -359,59 +392,94 @@ export const FormattingControls: React.FC<FormattingControlsProps> = ({ settings
               {t('builder.formatting.fontSize')}
             </h4>
             <div className="space-y-3">
-              <SpacingSelector
+              <StepperControl
                 label={t('builder.formatting.baseFontSize')}
                 value={settings.fontSize.base}
                 onChange={(v) => handleFontChange('base', v)}
               />
-              <SpacingSelector
+              <StepperControl
                 label={t('builder.formatting.headerScale')}
                 value={settings.fontSize.headerScale}
                 onChange={(v) => handleFontChange('headerScale', v)}
               />
               {/* Header Font Family */}
-              <div className="flex items-center gap-2">
-                <span
-                  id={`${contentId}-header-font`}
-                  className="font-mono text-xs w-16 text-ink-soft"
-                >
-                  {t('builder.formatting.headerFontFamily')}:
+              <Dropdown
+                label={t('builder.formatting.headerFontFamily')}
+                value={settings.fontSize.headerFont}
+                onChange={(v) => handleHeaderFontChange(v as HeaderFontFamily)}
+                options={(['serif', 'sans-serif', 'mono'] as HeaderFontFamily[]).map((font) => ({
+                  id: font,
+                  label: getFontLabel(font),
+                }))}
+              />
+              {/* Body Font Family */}
+              <Dropdown
+                label={t('builder.formatting.bodyFontFamily')}
+                value={settings.fontSize.bodyFont}
+                onChange={(v) => handleBodyFontChange(v as BodyFontFamily)}
+                options={(['serif', 'sans-serif', 'mono'] as BodyFontFamily[]).map((font) => ({
+                  id: font,
+                  label: getFontLabel(font),
+                }))}
+              />
+            </div>
+          </div>
+
+          {/* Personal Info Section */}
+          <div>
+            <h4 className="font-mono text-xs font-bold uppercase tracking-wider mb-3 text-ink-soft">
+              {t('builder.formatting.personalInfo.title')}
+            </h4>
+            <div className="space-y-4">
+              {/* Name style */}
+              <div>
+                <span className="font-mono text-xs text-ink-soft mb-2 block">
+                  {t('builder.formatting.personalInfo.nameStyle')}
                 </span>
                 <SegmentedControl
+                  aria-label={t('builder.formatting.personalInfo.nameStyle')}
                   size="sm"
-                  className="gap-1"
-                  aria-labelledby={`${contentId}-header-font`}
-                  value={settings.fontSize.headerFont}
-                  onChange={handleHeaderFontChange}
-                  items={(['serif', 'sans-serif', 'mono'] as HeaderFontFamily[]).map((font) => ({
-                    value: font,
-                    label: (
-                      <span style={{ fontFamily: FONT_PREVIEW[font] }}>{getFontLabel(font)}</span>
-                    ),
+                  items={PERSONAL_INFO_NAME_STYLES.map((style) => ({
+                    value: style,
+                    label: t(`builder.formatting.personalInfo.nameStyles.${style}`),
                   }))}
+                  value={settings.personalInfo.nameStyle}
+                  onChange={handlePersonalInfoNameStyleChange}
                 />
               </div>
-              {/* Body Font Family */}
-              <div className="flex items-center gap-2">
-                <span
-                  id={`${contentId}-body-font`}
-                  className="font-mono text-xs w-16 text-ink-soft"
-                >
-                  {t('builder.formatting.bodyFontFamily')}:
+
+              {/* Layout */}
+              <div>
+                <span className="font-mono text-xs text-ink-soft mb-2 block">
+                  {t('builder.formatting.personalInfo.layout')}
                 </span>
                 <SegmentedControl
+                  aria-label={t('builder.formatting.personalInfo.layout')}
                   size="sm"
-                  className="gap-1"
-                  aria-labelledby={`${contentId}-body-font`}
-                  value={settings.fontSize.bodyFont}
-                  onChange={handleBodyFontChange}
-                  items={(['serif', 'sans-serif', 'mono'] as BodyFontFamily[]).map((font) => ({
-                    value: font,
-                    label: (
-                      <span style={{ fontFamily: FONT_PREVIEW[font] }}>{getFontLabel(font)}</span>
-                    ),
+                  className="grid grid-cols-3"
+                  items={PERSONAL_INFO_LAYOUT_OPTIONS.map((layout) => ({
+                    value: layout,
+                    label: t(`builder.formatting.personalInfo.layouts.${layout}`),
                   }))}
+                  value={settings.personalInfo.layout}
+                  onChange={handlePersonalInfoLayoutChange}
                 />
+              </div>
+
+              {/* Field toggles */}
+              <div className="space-y-3">
+                <span className="font-mono text-xs text-ink-soft block">
+                  {t('builder.formatting.personalInfo.fields')}
+                </span>
+                {PERSONAL_INFO_FIELDS.map((field) => (
+                  <ToggleSwitch
+                    key={field}
+                    variant="inline"
+                    label={t(`builder.formatting.personalInfo.fieldLabels.${field}`)}
+                    checked={settings.personalInfo.fields[field]}
+                    onCheckedChange={(enabled) => handlePersonalInfoFieldToggle(field, enabled)}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -495,13 +563,6 @@ export const FormattingControls: React.FC<FormattingControlsProps> = ({ settings
   );
 };
 
-/** Font stacks for the font-family option labels, so each option previews its face. */
-const FONT_PREVIEW: Record<HeaderFontFamily, string> = {
-  serif: 'Georgia, serif',
-  'sans-serif': 'system-ui, sans-serif',
-  mono: 'monospace',
-};
-
 /**
  * Margin Slider Component
  *
@@ -546,6 +607,58 @@ interface SpacingSelectorProps {
 }
 
 const SPACING_LEVELS: SpacingLevel[] = [1, 2, 3, 4, 5];
+
+const MIN_SPACING_LEVEL = 1;
+const MAX_SPACING_LEVEL = 5;
+
+/**
+ * Stepper Control Component
+ *
+ * Minus/plus buttons for choosing a spacing level (1-5), used for font sizes.
+ */
+interface StepperControlProps {
+  label: string;
+  value: SpacingLevel;
+  onChange: (value: SpacingLevel) => void;
+}
+
+const StepperControl: React.FC<StepperControlProps> = ({ label, value, onChange }) => {
+  const labelId = useId();
+  const step = (delta: number) => {
+    const next = Math.min(MAX_SPACING_LEVEL, Math.max(MIN_SPACING_LEVEL, value + delta));
+    if (next !== value) onChange(next as SpacingLevel);
+  };
+  return (
+    <div className="flex items-center gap-2">
+      <span id={labelId} className="font-mono text-xs w-16 text-ink-soft">
+        {label}:
+      </span>
+      <div className="flex items-center gap-1" role="group" aria-labelledby={labelId}>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          aria-label={`${label} −`}
+          onClick={() => step(-1)}
+          disabled={value <= MIN_SPACING_LEVEL}
+        >
+          <Minus aria-hidden="true" />
+        </Button>
+        <span className="font-mono text-xs w-6 text-center text-ink tabular-nums">{value}</span>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          aria-label={`${label} +`}
+          onClick={() => step(1)}
+          disabled={value >= MAX_SPACING_LEVEL}
+        >
+          <Plus aria-hidden="true" />
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 const SpacingSelector: React.FC<SpacingSelectorProps> = ({ label, value, onChange }) => {
   const labelId = useId();

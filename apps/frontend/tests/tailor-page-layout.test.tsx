@@ -122,7 +122,9 @@ describe('tailor page: narrow centred card', () => {
     await renderPage();
     const line = screen.getByText('tailor.tailoringLabel').parentElement as HTMLElement;
     expect(within(line).getByText('common.loading')).toBeInTheDocument();
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: JOB } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'tailor.pasteJobDescription' }), {
+      target: { value: JOB },
+    });
     expect(generateButton()).toBeDisabled();
   });
 
@@ -140,15 +142,21 @@ describe('tailor page: Generate enablement is unchanged', () => {
   it('is disabled while the job description is empty or blank, enabled once filled', async () => {
     await renderPage();
     expect(generateButton()).toBeDisabled();
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: '   \n ' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'tailor.pasteJobDescription' }), {
+      target: { value: '   \n ' },
+    });
     expect(generateButton()).toBeDisabled();
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: JOB } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'tailor.pasteJobDescription' }), {
+      target: { value: JOB },
+    });
     expect(generateButton()).toBeEnabled();
   });
 
   it('stays enabled for a short description (the 50-character rule runs on click)', async () => {
     await renderPage();
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Too short' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'tailor.pasteJobDescription' }), {
+      target: { value: 'Too short' },
+    });
     expect(generateButton()).toBeEnabled();
     fireEvent.click(generateButton());
     expect(screen.getByText('tailor.errors.jobDescriptionTooShort')).toBeInTheDocument();
@@ -157,7 +165,9 @@ describe('tailor page: Generate enablement is unchanged', () => {
   it('is disabled and says why when no LLM is configured', async () => {
     api.llmConfigured = false;
     await renderPage();
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: JOB } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'tailor.pasteJobDescription' }), {
+      target: { value: JOB },
+    });
     expect(screen.getByRole('button', { name: 'tailor.configureApiKeyFirst' })).toBeDisabled();
   });
 });

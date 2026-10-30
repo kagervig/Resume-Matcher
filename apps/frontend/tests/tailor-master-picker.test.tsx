@@ -108,7 +108,7 @@ async function renderPage() {
 }
 
 async function fillJobDescriptionAndGenerate() {
-  fireEvent.change(screen.getByRole('textbox'), {
+  fireEvent.change(screen.getByRole('textbox', { name: 'tailor.pasteJobDescription' }), {
     target: { value: 'A software engineer role building useful tools with Python and SQL.' },
   });
   await act(async () => screen.getByRole('button', { name: 'tailor.generateTailored' }).click());
@@ -178,7 +178,7 @@ describe('tailor page master picker', () => {
   it('keeps Generate disabled until a source master is resolved', async () => {
     api.list.mockReturnValue(new Promise(() => {})); // the resume list never arrives
     await renderPage();
-    fireEvent.change(screen.getByRole('textbox'), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'tailor.pasteJobDescription' }), {
       target: { value: 'A software engineer role building useful tools with Python and SQL.' },
     });
     expect(screen.getByRole('button', { name: 'tailor.generateTailored' })).toBeDisabled();

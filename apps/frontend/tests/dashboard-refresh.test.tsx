@@ -3,7 +3,15 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import Dashboard from '@/app/(default)/dashboard/page';
 import type { fetchResume, ResumeListItem } from '@/lib/api/resume';
 
-const api = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), retry: vi.fn(), push: vi.fn() }));
+const api = vi.hoisted(() => ({
+  list: vi.fn(),
+  get: vi.fn(),
+  retry: vi.fn(),
+  push: vi.fn(),
+  listApps: vi.fn(),
+  applyResume: vi.fn(),
+  sessionUsage: vi.fn(),
+}));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: api.push }) }));
 vi.mock('@/lib/i18n', () => ({
   useTranslations: () => ({
@@ -28,6 +36,22 @@ vi.mock('@/lib/api/resume', () => ({
   deleteResume: vi.fn(),
   retryProcessing: (...args: unknown[]) => api.retry(...args),
   fetchJobDescription: vi.fn().mockResolvedValue(null),
+}));
+vi.mock('@/lib/api/tracker', () => ({
+  listApplications: (...args: unknown[]) => api.listApps(...args),
+  applyResume: (...args: unknown[]) => api.applyResume(...args),
+  APPLICATION_STATUS_ORDER: [
+    'saved',
+    'applied',
+    'no_response',
+    'response',
+    'interview',
+    'accepted',
+    'rejected',
+  ],
+}));
+vi.mock('@/lib/api/usage', () => ({
+  fetchSessionUsage: (...args: unknown[]) => api.sessionUsage(...args),
 }));
 vi.mock('@/components/dashboard/resume-upload-dialog', () => ({
   ResumeUploadDialog: ({ onUploadComplete }: { onUploadComplete: (id: string) => void }) => (
@@ -89,6 +113,18 @@ describe('dashboard refresh ownership', () => {
     localStorage.clear();
     vi.resetAllMocks();
     api.get.mockResolvedValue(status());
+    api.listApps.mockResolvedValue({
+      columns: {
+        saved: [],
+        applied: [],
+        no_response: [],
+        response: [],
+        interview: [],
+        accepted: [],
+        rejected: [],
+      },
+    });
+    api.sessionUsage.mockResolvedValue({ cost_usd: 0, calls: 0, started_at: '2026-01-01' });
   });
   afterEach(() => vi.useRealTimers());
 
@@ -98,8 +134,12 @@ describe('dashboard refresh ownership', () => {
     api.list.mockReturnValueOnce(old.promise).mockReturnValueOnce(fresh.promise);
     render(<Dashboard />);
     fireEvent.focus(window);
-    await act(async () => fresh.resolve([row('new-master', true), row('new-card')]));
-    await act(async () => old.resolve([row('old-master', true), row('old-card')]));
+    await act(async () =>
+      fresh.resolve([row('new-master', true), { ...row('new-card'), parent_id: 'new-master' }])
+    );
+    await act(async () =>
+      old.resolve([row('old-master', true), { ...row('old-card'), parent_id: 'old-master' }])
+    );
     expect(localStorage.getItem('master_resume_id')).toBe('new-master');
     expect(screen.getByText('new-card')).toBeInTheDocument();
     expect(screen.queryByText('old-card')).not.toBeInTheDocument();
@@ -248,12 +288,12 @@ describe('dashboard refresh ownership', () => {
     const old = deferred<ResumeListItem[]>();
     api.list
       .mockReturnValueOnce(old.promise)
-      .mockResolvedValue([row('uploaded', true), row('fresh-card')]);
+      .mockResolvedValue([row('uploaded', true), { ...row('fresh-card'), parent_id: 'uploaded' }]);
     render(<Dashboard />);
     fireEvent.click(screen.getByRole('button', { name: 'finish upload' }));
     await act(async () => {});
     expect(screen.getByText('fresh-card')).toBeInTheDocument();
-    await act(async () => old.resolve([row('stale-card')]));
+    await act(async () => old.resolve([{ ...row('stale-card'), parent_id: 'uploaded' }]));
     expect(screen.queryByText('stale-card')).not.toBeInTheDocument();
   });
 

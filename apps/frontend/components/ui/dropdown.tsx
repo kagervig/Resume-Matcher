@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useId, useRef, useState } from 'react';
-import { Check, CaretDown } from '@phosphor-icons/react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Check, CaretDown, MagnifyingGlass } from '@phosphor-icons/react';
 import { AnimatePresence, m, useIsPresent, useReducedMotion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { labelClass } from '@/components/ui/label';
@@ -22,6 +22,10 @@ interface DropdownProps {
   description?: string;
   /** Shown, and nothing is marked selected, when `value` matches no option. */
   placeholder?: string;
+  /** Add a type-to-filter search box at the top of the menu (for long lists). */
+  searchable?: boolean;
+  /** Placeholder for the search box; defaults to the translated "Search". */
+  searchPlaceholder?: string;
   disabled?: boolean;
   className?: string;
 }
@@ -71,6 +75,8 @@ export function Dropdown({
   label,
   description,
   placeholder,
+  searchable = false,
+  searchPlaceholder,
   disabled = false,
   className,
 }: DropdownProps) {
@@ -78,11 +84,13 @@ export function Dropdown({
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [flipUp, setFlipUp] = useState(false);
+  const [query, setQuery] = useState('');
   // Reduced motion: the menu only fades, it does not scale (spec §7).
   const reducedMotion = useReducedMotion();
   const menuScale = reducedMotion ? 1 : 0.98;
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const baseId = useId();
   const labelId = `${baseId}-label`;
@@ -91,6 +99,15 @@ export function Dropdown({
 
   const selectedIndex = options.findIndex((option) => option.id === value);
   const selected = selectedIndex >= 0 ? options[selectedIndex] : undefined;
+
+  // The menu renders this filtered view; keyboard nav and refs index into it.
+  const filtered = useMemo(() => {
+    if (!searchable || !query.trim()) return options;
+    const q = query.trim().toLowerCase();
+    return options.filter(
+      (option) => option.label.toLowerCase().includes(q) || option.id.toLowerCase().includes(q)
+    );
+  }, [options, query, searchable]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -103,23 +120,46 @@ export function Dropdown({
   }, [isOpen]);
 
   useEffect(() => {
-    if (isOpen && activeIndex >= 0) optionRefs.current[activeIndex]?.focus();
-  }, [isOpen, activeIndex]);
+    if (!isOpen) return;
+    // A searchable menu keeps focus in the search box until the user arrows down.
+    if (searchable && activeIndex < 0) {
+      searchRef.current?.focus();
+      return;
+    }
+    if (activeIndex >= 0) optionRefs.current[activeIndex]?.focus();
+  }, [isOpen, activeIndex, searchable]);
 
   const openAt = (index: number) => {
     if (disabled || options.length === 0) return;
     if (triggerRef.current) setFlipUp(shouldFlipUp(triggerRef.current));
-    setActiveIndex(index);
+    setActiveIndex(searchable ? -1 : index);
     setIsOpen(true);
   };
   const close = (returnFocus: boolean) => {
     setIsOpen(false);
     setActiveIndex(-1);
+    setQuery('');
     if (returnFocus) triggerRef.current?.focus();
   };
   const choose = (id: string) => {
     onChange(id);
     close(true);
+  };
+
+  const onSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (filtered.length > 0) setActiveIndex(0);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      if (filtered.length > 0) choose(filtered[0].id);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      close(true);
+    } else if (event.key === 'Tab') {
+      close(false);
+    }
   };
 
   const onTriggerKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -133,7 +173,13 @@ export function Dropdown({
   };
 
   const onOptionKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const last = options.length - 1;
+    const last = filtered.length - 1;
+    // In a searchable menu, ArrowUp off the top returns to the search box.
+    if (searchable && event.key === 'ArrowUp' && index === 0) {
+      event.preventDefault();
+      setActiveIndex(-1);
+      return;
+    }
     const moves: Record<string, number> = {
       ArrowDown: index === last ? 0 : index + 1,
       ArrowUp: index === 0 ? last : index - 1,
@@ -216,7 +262,32 @@ export function Dropdown({
                 flipUp ? 'bottom-full mb-1' : 'top-full mt-1'
               )}
             >
-              {options.map((option, index) => {
+              {searchable && (
+                <div className="sticky top-0 z-10 flex items-center gap-2 bg-white px-3 py-2">
+                  <MagnifyingGlass aria-hidden="true" className="size-4 shrink-0 text-steel" />
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    value={query}
+                    onChange={(event) => {
+                      setQuery(event.target.value);
+                      setActiveIndex(-1);
+                    }}
+                    onKeyDown={onSearchKeyDown}
+                    placeholder={searchPlaceholder ?? t('common.search')}
+                    aria-label={searchPlaceholder ?? t('common.search')}
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="w-full border-0 bg-transparent p-0 font-mono text-sm text-ink placeholder:text-steel focus-visible:outline-none"
+                  />
+                </div>
+              )}
+              {searchable && filtered.length === 0 && (
+                <div className="px-3 py-2 font-mono text-sm text-steel">
+                  {t('common.noResults')}
+                </div>
+              )}
+              {filtered.map((option, index) => {
                 const isSelected = option.id === value;
                 return (
                   <button

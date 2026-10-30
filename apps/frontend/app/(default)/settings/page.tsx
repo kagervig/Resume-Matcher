@@ -34,6 +34,13 @@ import {
   type ApiKeyProvider,
 } from '@/lib/api/config';
 import { API_URL } from '@/lib/api/client';
+import {
+  fetchOpenRouterModels,
+  fetchSessionUsage,
+  resetSessionUsage,
+  type OpenRouterModel,
+  type SessionUsage,
+} from '@/lib/api/usage';
 import { CHATGPT_RETURN_OUTCOMES, type ChatGptReturnOutcome } from '@/lib/api/chatgpt';
 import { ChatGptConnection } from '@/components/settings/chatgpt-connection';
 import { getVersionString } from '@/lib/config/version';
@@ -69,6 +76,7 @@ import {
   Monitor,
   Trash,
   Warning,
+  CurrencyDollar,
 } from '@phosphor-icons/react';
 import { useLanguage } from '@/lib/context/language-context';
 import { useTranslations } from '@/lib/i18n';
@@ -152,6 +160,13 @@ export default function SettingsPage() {
   // LLM Config state
   const [provider, setProvider] = useState<LLMProvider>('openai');
   const [model, setModel] = useState('');
+  // OpenRouter model picker: fetched once, lazily, when that provider is selected.
+  const [openRouterModels, setOpenRouterModels] = useState<OpenRouterModel[]>([]);
+  const [openRouterLoading, setOpenRouterLoading] = useState(false);
+  const [openRouterError, setOpenRouterError] = useState(false);
+  const [openRouterAttempted, setOpenRouterAttempted] = useState(false);
+  // Running LLM spend for the current backend process.
+  const [sessionUsage, setSessionUsage] = useState<SessionUsage | null>(null);
   const [apiKey, setApiKey] = useState('');
   const [apiBase, setApiBase] = useState('');
   const [hasStoredApiKey, setHasStoredApiKey] = useState(false);
@@ -184,10 +199,38 @@ export default function SettingsPage() {
   // Health check result from manual test
   const [healthCheck, setHealthCheck] = useState<LLMHealthCheck | null>(null);
 
+  // Load OpenRouter's model list once, the first time that provider is selected.
+  // `attempted` flips synchronously so a failed or empty fetch cannot re-trigger
+  // the effect on the next render (which otherwise loops).
+  useEffect(() => {
+    if (provider !== 'openrouter' || openRouterAttempted) return;
+    setOpenRouterAttempted(true);
+    setOpenRouterLoading(true);
+    setOpenRouterError(false);
+    fetchOpenRouterModels()
+      .then(setOpenRouterModels)
+      .catch(() => setOpenRouterError(true))
+      .finally(() => setOpenRouterLoading(false));
+  }, [provider, openRouterAttempted]);
+
+  // Session spend is shown in the status panel; refreshed on mount.
+  useEffect(() => {
+    fetchSessionUsage()
+      .then(setSessionUsage)
+      .catch(() => undefined);
+  }, []);
+
+  const handleResetSessionUsage = useCallback(() => {
+    resetSessionUsage()
+      .then(setSessionUsage)
+      .catch(() => undefined);
+  }, []);
+
   // Feature config state
   const [enableCoverLetter, setEnableCoverLetter] = useState(false);
   const [enableOutreach, setEnableOutreach] = useState(false);
   const [enableInterviewPrep, setEnableInterviewPrep] = useState(false);
+  const [preserveEducation, setPreserveEducation] = useState(true);
   const [featureConfigLoading, setFeatureConfigLoading] = useState(false);
   const [promptConfigLoading, setPromptConfigLoading] = useState(false);
   const [promptOptions, setPromptOptions] = useState<PromptOption[]>([]);
@@ -377,6 +420,7 @@ export default function SettingsPage() {
           setEnableCoverLetter(featureConfig.enable_cover_letter);
           setEnableOutreach(featureConfig.enable_outreach_message);
           setEnableInterviewPrep(featureConfig.enable_interview_prep);
+          setPreserveEducation(featureConfig.preserve_education);
         }
 
         if (promptConfig) {
@@ -575,7 +619,11 @@ export default function SettingsPage() {
 
   // Update feature config
   const handleFeatureConfigChange = async (
-    key: 'enable_cover_letter' | 'enable_outreach_message' | 'enable_interview_prep',
+    key:
+      | 'enable_cover_letter'
+      | 'enable_outreach_message'
+      | 'enable_interview_prep'
+      | 'preserve_education',
     value: boolean
   ) => {
     setFeatureConfigLoading(true);
@@ -584,6 +632,7 @@ export default function SettingsPage() {
       setEnableCoverLetter(updated.enable_cover_letter);
       setEnableOutreach(updated.enable_outreach_message);
       setEnableInterviewPrep(updated.enable_interview_prep);
+      setPreserveEducation(updated.preserve_education);
     } catch (err) {
       console.error('Failed to update feature config', err);
       // Revert on error
@@ -591,8 +640,10 @@ export default function SettingsPage() {
         setEnableCoverLetter(!value);
       } else if (key === 'enable_outreach_message') {
         setEnableOutreach(!value);
-      } else {
+      } else if (key === 'enable_interview_prep') {
         setEnableInterviewPrep(!value);
+      } else {
+        setPreserveEducation(!value);
       }
     } finally {
       setFeatureConfigLoading(false);
@@ -923,6 +974,36 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
+
+            {/* Session LLM spend (resets when the backend restarts or on reset) */}
+            {sessionUsage && (
+              <div className="border border-ink bg-white p-4 shadow-sw-nested">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <CurrencyDollar className="w-4 h-4 text-steel" />
+                      <span className="font-mono text-xs uppercase text-steel">
+                        {t('settings.statusCards.sessionCost')}
+                      </span>
+                    </div>
+                    <span className="font-mono text-2xl font-bold tabular-nums">
+                      ${sessionUsage.cost_usd.toFixed(4)}
+                    </span>
+                    <p className="mt-1 text-xs text-steel font-mono">
+                      {t('settings.statusCards.sessionCalls', { count: sessionUsage.calls })}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetSessionUsage}
+                  >
+                    {t('settings.statusCards.sessionReset')}
+                  </Button>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* LLM Configuration */}
@@ -994,24 +1075,61 @@ export default function SettingsPage() {
                 </>
               ) : (
                 <>
-                  {/* Model Input */}
-                  <div className="space-y-2">
-                    <Label htmlFor="model">{t('settings.llmConfiguration.modelLabel')}</Label>
-                    <Input
-                      id="model"
-                      value={model}
-                      onChange={(e) => setModel(e.target.value)}
-                      placeholder={providerInfo.defaultModel}
-                      autoComplete="off"
-                      spellCheck={false}
-                      className="font-mono"
-                    />
-                    <p className="text-xs text-steel font-mono">
-                      {t('settings.llmConfiguration.defaultModel', {
-                        model: providerInfo.defaultModel,
-                      })}
-                    </p>
-                  </div>
+                  {/* Model — OpenRouter gets a live dropdown; others a text field */}
+                  {provider === 'openrouter' && openRouterModels.length > 0 ? (
+                    <div className="space-y-2">
+                      <Dropdown
+                        label={t('settings.llmConfiguration.modelLabel')}
+                        value={model}
+                        onChange={setModel}
+                        searchable
+                        placeholder={t('settings.llmConfiguration.openRouterSelectModel')}
+                        options={openRouterModels.map((orm) => {
+                          const fmt = (price: number | null) =>
+                            price == null ? '—' : `$${(price * 1_000_000).toFixed(2)}`;
+                          const hasPrice = orm.prompt_price != null || orm.completion_price != null;
+                          return {
+                            id: orm.id,
+                            label: orm.name,
+                            description: hasPrice
+                              ? t('settings.llmConfiguration.openRouterPrice', {
+                                  in: fmt(orm.prompt_price),
+                                  out: fmt(orm.completion_price),
+                                })
+                              : undefined,
+                          };
+                        })}
+                      />
+                      <p className="text-xs text-steel font-mono">
+                        {t('settings.llmConfiguration.defaultModel', {
+                          model: providerInfo.defaultModel,
+                        })}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="model">{t('settings.llmConfiguration.modelLabel')}</Label>
+                      <Input
+                        id="model"
+                        value={model}
+                        onChange={(e) => setModel(e.target.value)}
+                        placeholder={providerInfo.defaultModel}
+                        autoComplete="off"
+                        spellCheck={false}
+                        className="font-mono"
+                        disabled={provider === 'openrouter' && openRouterLoading}
+                      />
+                      <p className="text-xs text-steel font-mono">
+                        {provider === 'openrouter' && openRouterLoading
+                          ? t('settings.llmConfiguration.openRouterLoading')
+                          : provider === 'openrouter' && openRouterError
+                            ? t('settings.llmConfiguration.openRouterError')
+                            : t('settings.llmConfiguration.defaultModel', {
+                                model: providerInfo.defaultModel,
+                              })}
+                      </p>
+                    </div>
+                  )}
 
                   {/* API Key Input — always enabled. For providers that don't
                   require a key (Ollama, OpenAI-Compatible local servers), the
@@ -1436,6 +1554,16 @@ export default function SettingsPage() {
                   }}
                   label={t('settings.contentGeneration.interviewPrep.label')}
                   description={t('settings.contentGeneration.interviewPrep.description')}
+                  disabled={featureConfigLoading}
+                />
+                <ToggleSwitch
+                  checked={preserveEducation}
+                  onCheckedChange={(checked) => {
+                    setPreserveEducation(checked);
+                    handleFeatureConfigChange('preserve_education', checked);
+                  }}
+                  label={t('settings.contentGeneration.preserveEducation.label')}
+                  description={t('settings.contentGeneration.preserveEducation.description')}
                   disabled={featureConfigLoading}
                 />
               </div>

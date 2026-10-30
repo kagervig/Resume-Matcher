@@ -151,6 +151,32 @@ class TestVerifyIdentityFields:
             "institution" in w.lower() or "identity" in w.lower() for w in warnings
         )
 
+    def test_warns_on_project_name_change(self, sample_resume, sample_job_keywords):
+        result = copy.deepcopy(sample_resume)
+        result["personalProjects"][0]["name"] = "Renamed Tool"
+        applied = [
+            ResumeChange(
+                path="summary", action="replace", original="x", value="y", reason="z"
+            )
+        ]
+        warnings = verify_diff_result(
+            sample_resume, result, applied, sample_job_keywords
+        )
+        assert any("name" in w.lower() or "identity" in w.lower() for w in warnings)
+
+    def test_warns_on_project_role_change(self, sample_resume, sample_job_keywords):
+        result = copy.deepcopy(sample_resume)
+        result["personalProjects"][0]["role"] = "Contributor"
+        applied = [
+            ResumeChange(
+                path="summary", action="replace", original="x", value="y", reason="z"
+            )
+        ]
+        warnings = verify_diff_result(
+            sample_resume, result, applied, sample_job_keywords
+        )
+        assert any("role" in w.lower() or "identity" in w.lower() for w in warnings)
+
 
 class TestVerifyWordCount:
     """Check 4: Word count ratio."""

@@ -57,6 +57,12 @@ class ApplicationListResponse(BaseModel):
     columns: dict[str, list[ApplicationResponse]]
 
 
+class ApplyFromResumeRequest(BaseModel):
+    """Mark a tailored resume as applied (create-or-promote its tracker card)."""
+
+    resume_id: str
+
+
 class ManualApplicationCreate(BaseModel):
     """Create a card from a pasted JD (no prior tailoring).
 

@@ -10,6 +10,9 @@ const api = vi.hoisted(() => ({
   remove: vi.fn(),
   push: vi.fn(),
   setHasMaster: vi.fn(),
+  listApps: vi.fn(),
+  applyResume: vi.fn(),
+  sessionUsage: vi.fn(),
   llmConfigured: true,
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: api.push }) }));
@@ -37,6 +40,22 @@ vi.mock('@/lib/api/resume', () => ({
   deleteResume: (...args: unknown[]) => api.remove(...args),
   retryProcessing: vi.fn(),
   fetchJobDescription: vi.fn().mockResolvedValue(null),
+}));
+vi.mock('@/lib/api/tracker', () => ({
+  listApplications: (...args: unknown[]) => api.listApps(...args),
+  applyResume: (...args: unknown[]) => api.applyResume(...args),
+  APPLICATION_STATUS_ORDER: [
+    'saved',
+    'applied',
+    'no_response',
+    'response',
+    'interview',
+    'accepted',
+    'rejected',
+  ],
+}));
+vi.mock('@/lib/api/usage', () => ({
+  fetchSessionUsage: (...args: unknown[]) => api.sessionUsage(...args),
 }));
 vi.mock('@/components/dashboard/resume-upload-dialog', () => ({
   ResumeUploadDialog: ({
@@ -100,6 +119,18 @@ describe('dashboard with several master resumes', () => {
     vi.resetAllMocks();
     api.llmConfigured = true;
     api.get.mockResolvedValue(status());
+    api.listApps.mockResolvedValue({
+      columns: {
+        saved: [],
+        applied: [],
+        no_response: [],
+        response: [],
+        interview: [],
+        accepted: [],
+        rejected: [],
+      },
+    });
+    api.sessionUsage.mockResolvedValue({ cost_usd: 0, calls: 0, started_at: '2026-01-01' });
   });
   afterEach(() => vi.useRealTimers());
 
@@ -419,9 +450,8 @@ describe('dashboard with several master resumes', () => {
   });
 
   describe('the Tailor entry point', () => {
-    // The only route to /tailor is the icon button on the "create resume" tile.
-    const tailorButton = () =>
-      within(screen.getByText('dashboard.createResume').parentElement!).getByRole('button');
+    // The only route to /tailor is the "Generate New Resume" primary button in the pending header.
+    const tailorButton = () => screen.getByRole('button', { name: 'dashboard.generateNew' });
 
     it('opens the tailor page when the default master failed but another master is ready', async () => {
       api.get.mockResolvedValue(status('failed'));

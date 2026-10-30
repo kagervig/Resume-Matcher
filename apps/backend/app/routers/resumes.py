@@ -10,6 +10,7 @@ from collections.abc import Awaitable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, NoReturn
+from urllib.parse import quote
 from uuid import uuid4
 
 from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
@@ -32,6 +33,7 @@ from app.database import (
     ResumeNotFoundError,
     db,
 )
+from app.llm import llm_call_context
 from app.pdf import PRINT_ERROR_SELECTOR, PDFRenderError, render_resume_pdf
 from app.preview import (
     PreviewBusyError,
@@ -46,6 +48,7 @@ from app.schemas import (
     ATSScore,
     ATSScoreRecord,
     ATSSubScores,
+    CoverLetterGenerateRequest,
     DuplicateResumeResponse,
     GenerateContentResponse,
     GenerateInterviewPrepResponse,
@@ -54,6 +57,8 @@ from app.schemas import (
     ImproveResumeRequest,
     ImproveResumeResponse,
     InterviewPrepData,
+    JDSummary,
+    JDSummaryRecord,
     PageFitSettings,
     RawResume,
     RefinementStats,
@@ -67,6 +72,7 @@ from app.schemas import (
     ResumeUploadResponse,
     SetDefaultMasterResponse,
     UpdateCoverLetterRequest,
+    UpdateCoverLetterSignatureRequest,
     UpdateOutreachMessageRequest,
     UpdateTitleRequest,
     normalize_resume_data,
@@ -77,6 +83,7 @@ from app.services.ats import compute_ats_score
 from app.services.bullet_selector import SELECTABLE_SECTIONS
 from app.services.cover_letter import (
     generate_cover_letter,
+    generate_cover_letter_guided,
     generate_outreach_message,
     generate_resume_title,
 )
@@ -93,6 +100,7 @@ from app.services.improver import (
     verify_skill_target_plan,
 )
 from app.services.interview_prep import generate_interview_prep
+from app.services.jd_summary import summarize_job_description
 from app.services.page_fit import page_limit, render_drafts, resume_print_url
 from app.services.parser import (
     MAX_EXTRACTED_TEXT_BYTES,
@@ -134,6 +142,39 @@ REFINEMENT_FAILED_WARNING = "REFINEMENT_FAILED: Resume refinement was unavailabl
 DIFF_UNAVAILABLE_WARNING = "DIFF_UNAVAILABLE: Resume changes could not be calculated."
 
 
+def _clean_job_field(value: Any) -> str | None:
+    """A trimmed non-empty string, or None."""
+    return value.strip() or None if isinstance(value, str) else None
+
+
+def _job_company_role_from_job(
+    job: dict[str, Any],
+) -> tuple[str | None, str | None]:
+    """Company and role of a job, preferring user-provided values.
+
+    Falls back to the opportunistically-promoted top level, then to the
+    canonical values extracted into ``job_keywords``.
+    """
+    keywords = job.get("job_keywords")
+    keywords = keywords if isinstance(keywords, dict) else {}
+    company = (
+        _clean_job_field(job.get("user_company"))
+        or _clean_job_field(job.get("company"))
+        or _clean_job_field(keywords.get("company"))
+    )
+    role = (
+        _clean_job_field(job.get("user_role"))
+        or _clean_job_field(job.get("role"))
+        or _clean_job_field(keywords.get("role"))
+    )
+    return (company, role)
+
+
+def _preferred_resume_title(job: dict[str, Any], generated_title: str) -> str:
+    """Use the user-provided job title when present, else the generated one."""
+    return _clean_job_field(job.get("user_role")) or generated_title
+
+
 async def _auto_create_tracker_application(
     *,
     job_id: str,
@@ -142,22 +183,23 @@ async def _auto_create_tracker_application(
     job: dict[str, Any] | None,
     title: str | None,
 ) -> None:
-    """Best-effort: drop an ``applied`` card on the tracker after a tailoring.
+    """Best-effort: drop a ``saved`` card on the tracker after a tailoring.
 
-    Company/role come from the cached job (zero extra LLM call). Wrapped so a
-    tracker failure can never break the tailoring flow.
+    The card starts in the pending (``saved``) column until the user marks it
+    applied. Company/role come from the cached job (zero extra LLM call).
+    Wrapped so a tracker failure can never break the tailoring flow.
     """
     try:
         if title is None:
             saved_resume = await db.get_resume(tailored_resume_id)
             title = (saved_resume or {}).get("title")
-        company = (job or {}).get("company")
-        role = title or (job or {}).get("role")
+        company, job_role = _job_company_role_from_job(job or {})
+        role = title or job_role
         await db.create_application(
             job_id=job_id,
             resume_id=tailored_resume_id,
             master_resume_id=master_resume_id,
-            status="applied",
+            status="saved",
             company=company,
             role=role,
         )
@@ -441,12 +483,16 @@ def _restore_original_dates(
 def _preserve_original_skills(
     original_data: dict[str, Any] | None,
     improved_data: dict[str, Any],
+    explicitly_removed_skills: frozenset[str] = frozenset(),
 ) -> dict[str, Any]:
     """Restore any skills, certs, languages, or awards dropped by the LLM.
 
     This is a hard safety net: regardless of what the LLM returns, no
     original item from these lists is ever lost.  Dropped items are
     appended at the end of the improved list.
+
+    explicitly_removed_skills: casefolded skill names intentionally removed via
+    a remove_skill diff action — these are exempt from restoration.
     """
     if not original_data:
         return improved_data
@@ -477,13 +523,20 @@ def _preserve_original_skills(
             item.casefold() for item in current_items if isinstance(item, str)
         }
 
-        # Append any originals that were dropped
+        # Append any originals that were dropped, skipping intentional removals
         restored = 0
         for item in orig_items:
-            if isinstance(item, str) and item.casefold() not in current_lower:
-                current_items.append(item)
-                current_lower.add(item.casefold())
-                restored += 1
+            if not isinstance(item, str):
+                continue
+            cf = item.casefold()
+            if cf in current_lower:
+                continue
+            if field == "technicalSkills" and cf in explicitly_removed_skills:
+                logger.info("Skipping restore of explicitly-removed skill: %s", item)
+                continue
+            current_items.append(item)
+            current_lower.add(cf)
+            restored += 1
 
         if restored:
             logger.info("Restored %d dropped items in additional.%s", restored, field)
@@ -587,6 +640,49 @@ def _preserve_personal_info(
     result = copy.deepcopy(improved_data)
     result["personalInfo"] = copy.deepcopy(original_info)
     return result, warnings
+
+
+_PROJECT_IDENTITY_FIELDS = ("name", "role", "years", "github", "website")
+
+
+def _preserve_original_projects(
+    original_data: dict[str, Any] | None,
+    improved_data: dict[str, Any],
+) -> dict[str, Any]:
+    """Restore project identity fields the LLM must not change.
+
+    For each project entry (matched by position), overwrites name, role, years,
+    github, and website from the original. Descriptions remain as tailored.
+    """
+    if not original_data:
+        return improved_data
+
+    orig_projects = original_data.get("personalProjects")
+    if not isinstance(orig_projects, list) or not orig_projects:
+        return improved_data
+
+    result = copy.deepcopy(improved_data)
+    result_projects = result.get("personalProjects")
+    if not isinstance(result_projects, list):
+        return result
+
+    restored_fields = 0
+    for i, orig in enumerate(orig_projects):
+        if i >= len(result_projects):
+            break
+        if not isinstance(orig, dict) or not isinstance(result_projects[i], dict):
+            continue
+        for field in _PROJECT_IDENTITY_FIELDS:
+            orig_val = orig.get(field)
+            if orig_val is not None and result_projects[i].get(field) != orig_val:
+                result_projects[i][field] = orig_val
+                restored_fields += 1
+
+    if restored_fields:
+        logger.info(
+            "Restored %d project identity field(s) changed by LLM", restored_fields
+        )
+    return result
 
 
 def _finalized_refinement_stats(
@@ -1181,6 +1277,17 @@ async def upload_resume(
         raise
 
 
+async def _job_company_role(resume_id: str) -> tuple[str | None, str | None]:
+    """Company and role of the job a tailored resume targets, else (None, None)."""
+    improvement = await db.get_improvement_by_tailored_resume(resume_id)
+    if not improvement:
+        return (None, None)
+    job = await db.get_job(improvement["job_id"])
+    if not job:
+        return (None, None)
+    return _job_company_role_from_job(job)
+
+
 @router.get("", response_model=ResumeFetchResponse)
 async def get_resume(resume_id: str = Query(...)) -> ResumeFetchResponse:
     """Fetch resume details by ID.
@@ -1217,6 +1324,11 @@ async def get_resume(resume_id: str = Query(...)) -> ResumeFetchResponse:
         ResumeData.model_validate(processed_data) if processed_data else None
     )
 
+    # For tailored resumes, surface the company/role of the job they target.
+    job_company, job_role = (
+        await _job_company_role(resume_id) if resume.get("parent_id") else (None, None)
+    )
+
     return ResumeFetchResponse(
         request_id=str(uuid4()),
         data=ResumeFetchData(
@@ -1224,6 +1336,8 @@ async def get_resume(resume_id: str = Query(...)) -> ResumeFetchResponse:
             raw_resume=raw_resume,
             processed_resume=processed_resume,
             cover_letter=resume.get("cover_letter"),
+            cover_letter_signature=resume.get("cover_letter_signature"),
+            cover_letter_context=resume.get("cover_letter_context"),
             outreach_message=resume.get("outreach_message"),
             interview_prep=_parse_interview_prep(
                 resume.get("interview_prep"),
@@ -1231,6 +1345,8 @@ async def get_resume(resume_id: str = Query(...)) -> ResumeFetchResponse:
             ),
             parent_id=resume.get("parent_id"),
             title=resume.get("title"),
+            job_company=job_company,
+            job_role=job_role,
             is_master=resume.get("is_master", False),
             is_default_master=resume.get("is_default_master", False),
         ),
@@ -1246,6 +1362,12 @@ async def list_resumes(include_master: bool = Query(False)) -> ResumeListRespons
 
     resumes.sort(key=lambda item: item.get("updated_at", ""), reverse=True)
 
+    # For tailored resumes (has a parent_id), look up company/role from the associated job.
+    tailored_ids = [r["resume_id"] for r in resumes if r.get("parent_id")]
+    job_meta: dict[str, tuple[str | None, str | None]] = {
+        resume_id: await _job_company_role(resume_id) for resume_id in tailored_ids
+    }
+
     summaries = [
         ResumeSummary(
             resume_id=resume["resume_id"],
@@ -1257,6 +1379,8 @@ async def list_resumes(include_master: bool = Query(False)) -> ResumeListRespons
             created_at=resume.get("created_at", ""),
             updated_at=resume.get("updated_at", ""),
             title=resume.get("title"),
+            job_company=job_meta.get(resume["resume_id"], (None, None))[0],
+            job_role=job_meta.get(resume["resume_id"], (None, None))[1],
         )
         for resume in resumes
     ]
@@ -1293,20 +1417,25 @@ async def improve_resume_preview_endpoint(
     language = get_content_language()
     prompt_id = request.prompt_id or _get_default_prompt_id()
 
+    # Created up front so every LLM call in the flow is tagged with it (the Task
+    # that wait_for creates copies this context), letting a rating attach later.
+    request_id = str(uuid4())
     progress = {"stage": "load_job_keywords"}
     detail = "Failed to preview resume. Please try again."
     try:
-        return await asyncio.wait_for(
-            _improve_preview_flow(
-                request=request,
-                resume=resume,
-                job=job,
-                language=language,
-                prompt_id=prompt_id,
-                progress=progress,
-            ),
-            timeout=remaining_timeout(),
-        )
+        with llm_call_context("improve", request_id):
+            return await asyncio.wait_for(
+                _improve_preview_flow(
+                    request=request,
+                    resume=resume,
+                    job=job,
+                    language=language,
+                    prompt_id=prompt_id,
+                    progress=progress,
+                    request_id=request_id,
+                ),
+                timeout=remaining_timeout(),
+            )
     except PreviewConflictError as e:
         raise HTTPException(status_code=409, detail=str(e)) from e
     except asyncio.CancelledError:
@@ -1343,8 +1472,11 @@ async def _improve_preview_flow(
     language: str,
     prompt_id: str,
     progress: dict[str, str] | None = None,
+    request_id: str | None = None,
 ) -> ImproveResumeResponse:
     """Inner flow for improve/preview, extracted so it can be wrapped in wait_for."""
+    if request_id is None:
+        request_id = str(uuid4())
     if progress is None:
         progress = {}
     progress["stage"] = "load_job_keywords"
@@ -1359,6 +1491,7 @@ async def _improve_preview_flow(
     # Collect warnings throughout the process
     response_warnings: list[str] = []
     allow_appended_rows = False
+    preserve_education = _load_config().get("preserve_education", True)
 
     source_content = resume["content"]
     bullet_selection = None
@@ -1383,6 +1516,7 @@ async def _improve_preview_flow(
     # Rewriting must not add bullets to the entries whose bullet set was chosen.
     fixed_row_sections = SELECTABLE_SECTIONS if bullet_selection is not None else ()
 
+    removed_skill_keys: frozenset[str] = frozenset()
     # Diff-based improvement: generate targeted changes, apply with verification
     if original_resume_data:
         skill_targets: list[dict[str, Any]] = []
@@ -1434,6 +1568,11 @@ async def _improve_preview_flow(
             changes=diff_result.changes,
             allowed_skill_targets=skill_targets,
             fixed_row_sections=fixed_row_sections,
+        )
+        removed_skill_keys = frozenset(
+            change.value.casefold()
+            for change in applied_changes
+            if change.action == "remove_skill" and isinstance(change.value, str)
         )
         allow_appended_rows = any(
             change.action == "append" for change in applied_changes
@@ -1489,7 +1628,10 @@ async def _improve_preview_flow(
     original_markdown = _get_original_markdown(resume)
     if original_markdown:
         improved_data = restore_dates_from_markdown(improved_data, original_markdown)
-    improved_data = _preserve_original_skills(original_resume_data, improved_data)
+    improved_data = _preserve_original_skills(
+        original_resume_data, improved_data, removed_skill_keys
+    )
+    improved_data = _preserve_original_projects(original_resume_data, improved_data)
     improved_data = _protect_custom_sections(original_resume_data, improved_data)
 
     # Multi-pass refinement: keyword injection, AI phrase removal, alignment validation
@@ -1533,6 +1675,7 @@ async def _improve_preview_flow(
             improved_data,
             allow_appended_rows=allow_appended_rows,
             fixed_row_sections=fixed_row_sections,
+            preserve_education=preserve_education,
         )
         response_warnings.extend(
             grounding_review_warnings(original_resume_data, improved_data)
@@ -1587,7 +1730,6 @@ async def _improve_preview_flow(
     if diff_error:
         response_warnings.append(DIFF_UNAVAILABLE_WARNING)
 
-    request_id = str(uuid4())
     progress["stage"] = "serialize_preview"
     return ImproveResumeResponse(
         request_id=request_id,
@@ -1673,7 +1815,12 @@ async def improve_resume_confirm_endpoint(
                     "Original resume data is unavailable; process the source before preview"
                 )
             canonical = ResumeData.model_validate(
-                finalize_ai_resume(original, improved_data, allow_appended_rows=True)
+                finalize_ai_resume(
+                    original,
+                    improved_data,
+                    allow_appended_rows=True,
+                    preserve_education=feature_config.get("preserve_education", True),
+                )
             ).model_dump()
             if canonical != improved_data:
                 raise ValueError(
@@ -1718,6 +1865,7 @@ async def improve_resume_confirm_endpoint(
             timeout=remaining_timeout(),
         )
         response_warnings.extend(aux_warnings)
+        title = _preferred_resume_title(job, title)
         improved_text = json.dumps(improved_data, indent=2)
         request_id = str(uuid4())
         response = ImproveResumeData(
@@ -1848,6 +1996,7 @@ async def execute_tailoring_pipeline(
     original_resume_data = _get_original_resume_data(resume)
     response_warnings: list[str] = []
     allow_appended_rows = False
+    removed_skill_keys: frozenset[str] = frozenset()
 
     # Diff-based improvement: generate targeted changes, apply with verification
     if original_resume_data:
@@ -1863,6 +2012,11 @@ async def execute_tailoring_pipeline(
         improved_data, applied_changes, rejected_changes = apply_diffs(
             original=original_resume_data,
             changes=diff_result.changes,
+        )
+        removed_skill_keys = frozenset(
+            change.value.casefold()
+            for change in applied_changes
+            if change.action == "remove_skill" and isinstance(change.value, str)
         )
         allow_appended_rows = any(
             change.action == "append" for change in applied_changes
@@ -1909,7 +2063,10 @@ async def execute_tailoring_pipeline(
     original_markdown = _get_original_markdown(resume)
     if original_markdown:
         improved_data = restore_dates_from_markdown(improved_data, original_markdown)
-    improved_data = _preserve_original_skills(original_resume_data, improved_data)
+    improved_data = _preserve_original_skills(
+        original_resume_data, improved_data, removed_skill_keys
+    )
+    improved_data = _preserve_original_projects(original_resume_data, improved_data)
     improved_data = _protect_custom_sections(original_resume_data, improved_data)
 
     # Multi-pass refinement: keyword injection, AI phrase removal, alignment validation
@@ -1950,6 +2107,7 @@ async def execute_tailoring_pipeline(
             improved_data,
             allow_review_claims=False,
             allow_appended_rows=allow_appended_rows,
+            preserve_education=feature_config.get("preserve_education", True),
         )
         response_warnings.extend(
             grounding_review_warnings(original_resume_data, improved_data)
@@ -1988,6 +2146,7 @@ async def execute_tailoring_pipeline(
         enable_interview_prep,
     )
     response_warnings.extend(aux_warnings)
+    title = _preferred_resume_title(job, title)
 
     # Stored as the builder's last ATS score, as at preview confirmation.
     ats_record: dict[str, Any] | None = None
@@ -2167,6 +2326,7 @@ async def update_resume_endpoint(
             raw_resume=raw_resume,
             processed_resume=processed_resume,
             cover_letter=updated.get("cover_letter"),
+            cover_letter_signature=updated.get("cover_letter_signature"),
             outreach_message=updated.get("outreach_message"),
             interview_prep=_parse_interview_prep(
                 updated.get("interview_prep"),
@@ -2389,6 +2549,19 @@ async def update_cover_letter(
     return {"message": "Cover letter updated successfully"}
 
 
+@router.patch("/{resume_id}/cover-letter-signature")
+async def update_cover_letter_signature(
+    resume_id: str, request: UpdateCoverLetterSignatureRequest
+) -> dict:
+    """Update the cover letter signature for a resume."""
+    resume = await db.get_resume(resume_id)
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    await db.update_resume(resume_id, {"cover_letter_signature": request.content})
+    return {"message": "Cover letter signature updated successfully"}
+
+
 @router.patch("/{resume_id}/outreach-message")
 async def update_outreach_message(
     resume_id: str, request: UpdateOutreachMessageRequest
@@ -2578,6 +2751,89 @@ async def generate_cover_letter_endpoint(resume_id: str) -> GenerateContentRespo
 
     return GenerateContentResponse(
         content=cover_letter_content,
+        message="Cover letter generated successfully",
+    )
+
+
+@router.post(
+    "/{resume_id}/cover-letter/generate", response_model=GenerateContentResponse
+)
+async def generate_cover_letter_guided_endpoint(
+    resume_id: str,
+    request: CoverLetterGenerateRequest | None = None,
+) -> GenerateContentResponse:
+    """Generate a guided 300-400 word cover letter with candidate-provided context.
+
+    On first call, context is required. On subsequent calls, stored context is
+    reused when context is omitted; the feedback field refines the output.
+    """
+    resume = await db.get_resume(resume_id)
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    if not resume.get("parent_id"):
+        raise HTTPException(
+            status_code=400,
+            detail="Cover letter can only be generated for tailored resumes.",
+        )
+
+    improvement = await db.get_improvement_by_tailored_resume(resume_id)
+    if not improvement:
+        raise HTTPException(
+            status_code=400,
+            detail="No job context found for this resume.",
+        )
+
+    job = await db.get_job(improvement["job_id"])
+    if not job:
+        raise HTTPException(status_code=404, detail="Associated job not found.")
+
+    resume_data = resume.get("processed_data")
+    if not resume_data:
+        raise HTTPException(
+            status_code=400,
+            detail="Resume has no processed data.",
+        )
+
+    _validate_ai_sources(resume, job)
+    language = get_content_language()
+
+    # Resolve context: prefer body, fall back to stored, raise if still missing
+    if request and request.context is not None:
+        context_dict = request.context.model_dump()
+        await db.update_resume(resume_id, {"cover_letter_context": context_dict})
+    else:
+        context_dict = resume.get("cover_letter_context") or {}
+
+    if not context_dict:
+        raise HTTPException(
+            status_code=400,
+            detail="Context required. Provide context answers on first generation.",
+        )
+
+    feedback = (request.feedback if request else "") or ""
+
+    try:
+        content = await generate_cover_letter_guided(
+            resume_data,
+            job["content"],
+            context_dict,
+            feedback=feedback,
+            language=language,
+        )
+    except (DatabaseBusyError, AIOperationDeadlineExceeded, PromptSizeError):
+        raise
+    except Exception as e:
+        logger.error(f"Guided cover letter generation failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate cover letter. Please try again.",
+        )
+
+    await db.update_resume(resume_id, {"cover_letter": content})
+
+    return GenerateContentResponse(
+        content=content,
         message="Cover letter generated successfully",
     )
 
@@ -2830,6 +3086,91 @@ async def recalculate_ats_score_for_resume(resume_id: str) -> ATSScoreRecord:
     return ATSScoreRecord.model_validate(record)
 
 
+_MAX_SALIENT_KEYWORDS = 20
+
+
+def _salient_keywords(job: dict[str, Any]) -> list[str]:
+    """Deduped salient keywords from a job's extracted keywords.
+
+    Merges required/preferred skills and general keywords (case-insensitive,
+    order-preserving). Read directly rather than via ``_cached_job_keywords``
+    so the list still shows for resumes tailored before hash tracking.
+    """
+    keywords = job.get("job_keywords")
+    if not isinstance(keywords, dict):
+        return []
+    seen: set[str] = set()
+    merged: list[str] = []
+    for field in ("required_skills", "preferred_skills", "keywords"):
+        for item in keywords.get(field, []) or []:
+            if not isinstance(item, str):
+                continue
+            value = item.strip()
+            lowered = value.lower()
+            if value and lowered not in seen:
+                seen.add(lowered)
+                merged.append(value)
+    return merged[:_MAX_SALIENT_KEYWORDS]
+
+
+@router.get("/{resume_id}/jd-summary", response_model=JDSummaryRecord | None)
+async def get_jd_summary_for_resume(resume_id: str) -> JDSummaryRecord | None:
+    """Cached AI summary of the job a tailored resume targets, or null if none."""
+    _, improvement = await _tailored_resume_job_link(resume_id)
+    job = await db.get_job(improvement["job_id"])
+    record = job.get("jd_summary") if job else None
+    return JDSummaryRecord.model_validate(record) if record else None
+
+
+@router.post("/{resume_id}/jd-summary", response_model=JDSummaryRecord)
+async def generate_jd_summary_for_resume(resume_id: str) -> JDSummaryRecord:
+    """Generate and cache an AI digest of the linked job description.
+
+    One LLM call produces the summary and core competencies; salient keywords
+    come from the job's already-extracted keywords. Cached on the job so other
+    tailored resumes of the same job reuse it.
+    """
+    resume, improvement = await _tailored_resume_job_link(resume_id)
+    job = await db.get_job(improvement["job_id"])
+    if not job:
+        raise HTTPException(
+            status_code=404,
+            detail="No job description is linked to this resume.",
+        )
+    _validate_ai_sources(resume, job)
+    try:
+        fields = await summarize_job_description(job["content"])
+    except (DatabaseBusyError, AIOperationDeadlineExceeded, PromptSizeError):
+        raise
+    except Exception as e:
+        logger.exception("JD summary generation failed for %s: %s", resume_id, e)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to summarize the job description. Please try again.",
+        ) from e
+
+    summary = JDSummary(
+        summary=fields["summary"],
+        core_competencies=fields["core_competencies"],
+        keywords=_salient_keywords(job),
+    )
+    record = JDSummaryRecord(
+        summary=summary,
+        generated_at=datetime.now(timezone.utc).isoformat(),
+    ).model_dump(mode="json")
+    try:
+        await db.update_job(
+            job["job_id"],
+            {
+                "jd_summary": record,
+                "jd_summary_hash": _hash_job_content(job["content"]),
+            },
+        )
+    except DatabaseBusyError:
+        raise  # mapped to a retryable 503 by the app-level handler
+    return JDSummaryRecord.model_validate(record)
+
+
 @router.get("/{resume_id}/job-description")
 async def get_job_description_for_resume(resume_id: str) -> dict:
     """Get the job description used to tailor this resume.
@@ -2877,6 +3218,8 @@ async def download_cover_letter_pdf(
     resume_id: str,
     pageSize: str = Query("A4", pattern="^(A4|LETTER)$"),
     lang: str | None = Query(None, pattern="^[a-z]{2}(-[A-Z]{2})?$"),
+    font: str | None = Query(None, pattern="^[A-Za-z ]{1,30}$"),
+    fontSize: str | None = Query(None, pattern="^[0-9.]{1,6}pt$"),
 ) -> Response:
     """Generate a PDF for a cover letter using headless Chromium.
 
@@ -2884,6 +3227,8 @@ async def download_cover_letter_pdf(
         resume_id: The ID of the resume containing the cover letter
         pageSize: A4 or LETTER
         lang: locale used for print page translations
+        font: optional font family forwarded to the print page
+        fontSize: optional body font size forwarded to the print page
     """
     resume = await db.get_resume(resume_id)
     if not resume:
@@ -2895,10 +3240,15 @@ async def download_cover_letter_pdf(
             status_code=404, detail="No cover letter found for this resume"
         )
 
-    # Build print URL (same pattern as resume PDF)
+    # Build print URL (same pattern as resume PDF). The print page whitelists
+    # font/fontSize again, so forwarding them here is safe.
     url = f"{settings.frontend_base_url}/print/cover-letter/{resume_id}?pageSize={pageSize}"
     if lang:
         url = f"{url}&lang={lang}"
+    if font:
+        url = f"{url}&font={quote(font)}"
+    if fontSize:
+        url = f"{url}&fontSize={quote(fontSize)}"
 
     # Render PDF with cover letter selector
     try:

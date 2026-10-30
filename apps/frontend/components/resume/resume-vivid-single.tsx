@@ -7,8 +7,13 @@ import type {
 } from '@/components/dashboard/resume-component';
 import { getSortedSections } from '@/lib/utils/section-helpers';
 import { formatDateRange } from '@/lib/utils';
+import {
+  DEFAULT_TEMPLATE_SETTINGS,
+  type PersonalInfoSettings,
+} from '@/lib/types/template-settings';
 import { EarlierExperience, splitCondensed } from './earlier-experience';
 import { RESUME_SECTION, RESUME_SECTION_TITLE, resumeItem } from './page-break-attrs';
+import { useAdditionalGroups } from './use-additional-groups';
 import baseStyles from './styles/_base.module.css';
 import styles from './styles/vivid.module.css';
 import {
@@ -16,7 +21,6 @@ import {
   VividExperienceItem,
   VividHeader,
   VividProjectItem,
-  cleanItems,
   getVividHeadings,
   renderArrowBullets,
   renderContactDetail,
@@ -26,6 +30,7 @@ interface ResumeVividSingleProps {
   earlierExperienceLabel?: string;
   data: ResumeData;
   showContactIcons?: boolean;
+  personalInfoSettings?: PersonalInfoSettings;
   sectionHeadings?: Partial<ResumeSectionHeadings>;
   fallbackLabels?: Partial<ResumeFallbackLabels>;
 }
@@ -47,16 +52,20 @@ interface ResumeVividSingleProps {
 export const ResumeVividSingle: React.FC<ResumeVividSingleProps> = ({
   data,
   showContactIcons = false,
+  personalInfoSettings = DEFAULT_TEMPLATE_SETTINGS.personalInfo,
   sectionHeadings,
   fallbackLabels,
   earlierExperienceLabel,
 }) => {
   const { personalInfo, summary, workExperience, education, personalProjects, additional } = data;
 
-  const technicalSkills = cleanItems(additional?.technicalSkills);
-  const languages = cleanItems(additional?.languages);
-  const certificationsTraining = cleanItems(additional?.certificationsTraining);
-  const awards = cleanItems(additional?.awards);
+  // Visibility-aware groups; empty array for a group means hidden or no content.
+  const { groups: additionalGroups } = useAdditionalGroups(additional, additional?.visibility);
+  const additionalGroupMap = Object.fromEntries(additionalGroups.map((g) => [g.key, g.items]));
+  const technicalSkills = additionalGroupMap.technicalSkills ?? [];
+  const languages = additionalGroupMap.languages ?? [];
+  const certificationsTraining = additionalGroupMap.certificationsTraining ?? [];
+  const awards = additionalGroupMap.awards ?? [];
 
   const headings = getVividHeadings(sectionHeadings);
   const sortedSections = getSortedSections(data);
@@ -66,9 +75,27 @@ export const ResumeVividSingle: React.FC<ResumeVividSingleProps> = ({
 
   const links = personalInfo
     ? [
-        renderContactDetail(showContactIcons, 'LinkedIn', personalInfo.linkedin),
-        renderContactDetail(showContactIcons, 'GitHub', personalInfo.github),
-        renderContactDetail(showContactIcons, 'Website', personalInfo.website),
+        renderContactDetail(
+          showContactIcons,
+          'LinkedIn',
+          personalInfo.linkedin,
+          '',
+          personalInfoSettings.fields
+        ),
+        renderContactDetail(
+          showContactIcons,
+          'GitHub',
+          personalInfo.github,
+          '',
+          personalInfoSettings.fields
+        ),
+        renderContactDetail(
+          showContactIcons,
+          'Website',
+          personalInfo.website,
+          '',
+          personalInfoSettings.fields
+        ),
       ].filter(Boolean)
     : [];
 
@@ -128,9 +155,12 @@ export const ResumeVividSingle: React.FC<ResumeVividSingleProps> = ({
                       </>
                     )}
                   </div>
-                  {edu.years && (
-                    <div className={`${baseStyles['resume-row-tight']} ${styles.entryMeta}`}>
-                      {formatDateRange(edu.years)}
+                  {(edu.years || edu.grade) && (
+                    <div
+                      className={`${baseStyles['resume-row-tight']} ${styles.entryMeta} flex justify-between items-baseline`}
+                    >
+                      <span>{formatDateRange(edu.years)}</span>
+                      {edu.grade && <span>{edu.grade}</span>}
                     </div>
                   )}
                   {edu.description && (
@@ -217,6 +247,7 @@ export const ResumeVividSingle: React.FC<ResumeVividSingleProps> = ({
         showContactIcons={showContactIcons}
         nameFallback={fallbackLabels?.name}
         nameRestClassName={styles.nameRestSolid}
+        fields={personalInfoSettings.fields}
       />
 
       {sortedSections.map((section) => renderSection(section))}

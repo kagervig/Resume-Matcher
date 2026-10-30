@@ -15,6 +15,7 @@ from app.prompts.templates import (
     INTERVIEW_PREP_PROMPT,
     PARSE_RESUME_PROMPT,
     SKILL_TARGET_PLAN_PROMPT,
+    SUMMARIZE_JD_PROMPT,
     get_language_name,
 )
 
@@ -57,6 +58,7 @@ __all__ = [
     "BULLET_RELEVANCE_PROMPT",
     "GENERATE_TITLE_PROMPT",
     "INTERVIEW_PREP_PROMPT",
+    "SUMMARIZE_JD_PROMPT",
     "REQUIRED_FEATURE_PROMPT_PLACEHOLDERS",
     "validate_prompt_placeholders",
     "get_language_name",

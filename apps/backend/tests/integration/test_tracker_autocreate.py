@@ -24,21 +24,25 @@ def _new_client() -> AsyncClient:
 
 
 async def _preview_then_confirm(
-    isolated_db: Database, sample_resume: dict[str, Any], confirm_count: int = 1
+    isolated_db: Database,
+    sample_resume: dict[str, Any],
+    confirm_count: int = 1,
+    company: str | None = None,
+    role: str | None = None,
 ) -> tuple[str, str, str]:
     """Run the mocked preview→confirm handshake; return the tailored resume id."""
     upload_resp = await _upload_resume(isolated_db, sample_resume)
     resume_id = upload_resp.json()["resume_id"]
 
+    job_payload: dict[str, Any] = {
+        "job_descriptions": ["Senior Backend Engineer at Acme Corp: Python, FastAPI."]
+    }
+    if company is not None:
+        job_payload["company"] = company
+    if role is not None:
+        job_payload["role"] = role
     async with _new_client() as client:
-        jobs_resp = await client.post(
-            "/api/v1/jobs/upload",
-            json={
-                "job_descriptions": [
-                    "Senior Backend Engineer at Acme Corp: Python, FastAPI."
-                ]
-            },
-        )
+        jobs_resp = await client.post("/api/v1/jobs/upload", json=job_payload)
     job_id = jobs_resp.json()["job_id"][0]
 
     improved = ResumeData.model_validate(copy.deepcopy(sample_resume)).model_dump()
@@ -116,7 +120,7 @@ async def _preview_then_confirm(
 
 
 class TestTrackerAutoCreate:
-    async def test_confirm_creates_applied_card(
+    async def test_confirm_creates_saved_card(
         self, isolated_db: Database, sample_resume: dict[str, Any]
     ) -> None:
         resume_id, job_id, tailored_id = await _preview_then_confirm(
@@ -126,9 +130,11 @@ class TestTrackerAutoCreate:
         async with _new_client() as client:
             board = (await client.get("/api/v1/applications")).json()["columns"]
 
-        applied = board["applied"]
-        assert len(applied) == 1
-        card = applied[0]
+        # The card starts pending in the saved column, not applied.
+        assert len(board["applied"]) == 0
+        saved = board["saved"]
+        assert len(saved) == 1
+        card = saved[0]
         # Card points at the tailored (applied) resume and the master.
         assert card["resume_id"] == tailored_id
         assert card["master_resume_id"] == resume_id
@@ -136,7 +142,29 @@ class TestTrackerAutoCreate:
         # Company comes from the cached job; role falls back to the resume title.
         assert card["company"] == "Acme Corp"
         assert card["role"] == "Senior Backend Engineer - Acme Corp"
-        assert card["applied_at"] is not None
+        assert card["applied_at"] is None
+
+    async def test_user_typed_role_becomes_title_and_card_role(
+        self, isolated_db: Database, sample_resume: dict[str, Any]
+    ) -> None:
+        # The generated title is mocked to something else; the typed role wins.
+        _resume_id, _job_id, tailored_id = await _preview_then_confirm(
+            isolated_db,
+            sample_resume,
+            company="HelloFresh",
+            role="Backend Engineer, Consumer",
+        )
+
+        async with _new_client() as client:
+            fetched = (
+                await client.get("/api/v1/resumes", params={"resume_id": tailored_id})
+            ).json()["data"]
+            board = (await client.get("/api/v1/applications")).json()["columns"]
+
+        assert fetched["title"] == "Backend Engineer, Consumer"
+        card = board["saved"][0]
+        assert card["company"] == "HelloFresh"
+        assert card["role"] == "Backend Engineer, Consumer"
 
     async def test_autocreate_is_idempotent_on_double_confirm(
         self,
@@ -146,5 +174,47 @@ class TestTrackerAutoCreate:
         await _preview_then_confirm(isolated_db, sample_resume, confirm_count=2)
         async with _new_client() as client:
             board = (await client.get("/api/v1/applications")).json()["columns"]
-        assert len(board["applied"]) == 1
+        assert len(board["saved"]) == 1
         assert len(await isolated_db.list_resumes()) == 2
+
+
+class TestJDSummary:
+    async def test_summary_is_null_then_generated_and_cached(
+        self, isolated_db: Database, sample_resume: dict[str, Any]
+    ) -> None:
+        _resume_id, _job_id, tailored_id = await _preview_then_confirm(
+            isolated_db, sample_resume
+        )
+
+        async with _new_client() as client:
+            # No summary exists until it is generated.
+            before = await client.get(f"/api/v1/resumes/{tailored_id}/jd-summary")
+            assert before.status_code == 200
+            assert before.json() is None
+
+            with patch(
+                "app.routers.resumes.summarize_job_description",
+                new_callable=AsyncMock,
+                return_value={
+                    "summary": "A senior backend role building Python APIs.",
+                    "core_competencies": ["Backend API design", "Cloud infrastructure"],
+                },
+            ):
+                generated = await client.post(
+                    f"/api/v1/resumes/{tailored_id}/jd-summary"
+                )
+            assert generated.status_code == 200, generated.text
+            payload = generated.json()
+            assert payload["summary"]["summary"].startswith("A senior backend role")
+            assert payload["summary"]["core_competencies"] == [
+                "Backend API design",
+                "Cloud infrastructure",
+            ]
+            # Salient keywords are reused from the job's extracted keywords.
+            assert "Python" in payload["summary"]["keywords"]
+            assert payload["generated_at"]
+
+            # A second GET returns the cached record without regenerating.
+            after = await client.get(f"/api/v1/resumes/{tailored_id}/jd-summary")
+            assert after.status_code == 200
+            assert after.json()["summary"]["summary"] == payload["summary"]["summary"]

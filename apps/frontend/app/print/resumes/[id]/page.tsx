@@ -7,6 +7,10 @@ import {
   type HeaderFontFamily,
   type BodyFontFamily,
   type AccentColor,
+  type PersonalInfoLayout,
+  type PersonalInfoNameStyle,
+  type PersonalInfoSettings,
+  PERSONAL_INFO_FIELDS,
   DEFAULT_TEMPLATE_SETTINGS,
 } from '@/lib/types/template-settings';
 import { API_BASE } from '@/lib/api/client';
@@ -34,6 +38,9 @@ type PageProps = {
     compactMode?: string;
     showContactIcons?: string;
     accentColor?: string;
+    piLayout?: string;
+    piNameStyle?: string;
+    piFields?: string;
     lang?: string;
     draft?: string;
   }>;
@@ -67,6 +74,37 @@ function parseAccentColor(value: string | undefined): AccentColor {
     return value;
   }
   return DEFAULT_TEMPLATE_SETTINGS.accentColor;
+}
+
+const PERSONAL_INFO_LAYOUTS: readonly PersonalInfoLayout[] = [
+  'two-line-center',
+  'two-line-2col',
+  'two-line-3col',
+  'one-line',
+  'two-line-left',
+  'two-line-right',
+];
+
+/** Parse the personal-info settings from the `pi*` query params. */
+function parsePersonalInfo(
+  layout: string | undefined,
+  nameStyle: string | undefined,
+  fieldsCsv: string | undefined
+): PersonalInfoSettings {
+  const base = DEFAULT_TEMPLATE_SETTINGS.personalInfo;
+  const resolvedLayout = PERSONAL_INFO_LAYOUTS.includes(layout as PersonalInfoLayout)
+    ? (layout as PersonalInfoLayout)
+    : base.layout;
+  const resolvedNameStyle: PersonalInfoNameStyle =
+    nameStyle === 'large' || nameStyle === 'centered' || nameStyle === 'match'
+      ? nameStyle
+      : base.nameStyle;
+  // `piFields` is a CSV of the enabled field keys; absent means "use defaults".
+  const enabled = fieldsCsv === undefined ? null : new Set(fieldsCsv.split(',').filter(Boolean));
+  const fields = Object.fromEntries(
+    PERSONAL_INFO_FIELDS.map((field) => [field, enabled ? enabled.has(field) : base.fields[field]])
+  ) as PersonalInfoSettings['fields'];
+  return { layout: resolvedLayout, nameStyle: resolvedNameStyle, fields };
 }
 
 /**
@@ -259,6 +297,11 @@ export default async function PrintResumePage({ params, searchParams }: PageProp
       DEFAULT_TEMPLATE_SETTINGS.showContactIcons
     ),
     accentColor: parseAccentColor(resolvedSearchParams?.accentColor),
+    personalInfo: parsePersonalInfo(
+      resolvedSearchParams?.piLayout,
+      resolvedSearchParams?.piNameStyle,
+      resolvedSearchParams?.piFields
+    ),
   };
 
   // Note: Margins are applied by Playwright's PDF renderer (not here)

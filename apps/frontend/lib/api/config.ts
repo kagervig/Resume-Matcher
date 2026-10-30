@@ -260,12 +260,14 @@ export interface FeatureConfig {
   enable_cover_letter: boolean;
   enable_outreach_message: boolean;
   enable_interview_prep: boolean;
+  preserve_education: boolean;
 }
 
 export interface FeatureConfigUpdate {
   enable_cover_letter?: boolean;
   enable_outreach_message?: boolean;
   enable_interview_prep?: boolean;
+  preserve_education?: boolean;
 }
 
 // Fetch feature configuration
@@ -294,6 +296,34 @@ export async function updateFeatureConfig(config: FeatureConfigUpdate): Promise<
   }
 
   return res.json();
+}
+
+// Fetch the global default cover letter signature
+export async function fetchDefaultCoverLetterSignature(): Promise<string> {
+  const res = await apiFetch('/config/cover-letter-signature', { credentials: 'include' });
+  if (!res.ok) {
+    throw new Error(`Failed to load default cover letter signature (status ${res.status}).`);
+  }
+  const data = (await res.json()) as { signature: string };
+  return data.signature;
+}
+
+// Set the global default cover letter signature used by all cover letters
+export async function updateDefaultCoverLetterSignature(signature: string): Promise<string> {
+  const res = await apiFetch('/config/cover-letter-signature', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ signature }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(
+      data.detail || `Failed to update default cover letter signature (status ${res.status}).`
+    );
+  }
+  const result = (await res.json()) as { signature: string };
+  return result.signature;
 }
 
 // Language configuration types

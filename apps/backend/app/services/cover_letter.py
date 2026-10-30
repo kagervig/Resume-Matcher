@@ -170,3 +170,53 @@ async def generate_resume_title(
     # Strip quotes and whitespace, truncate to 80 chars
     title = result.strip().strip("\"'")
     return title[:80]
+
+async def generate_cover_letter_guided(
+    resume_data: dict[str, Any],
+    job_description: str,
+    context: dict[str, Any],
+    feedback: str = "",
+    language: str = "en",
+) -> str:
+    """Generate a 300-400 word cover letter using candidate-provided context.
+
+    Args:
+        resume_data: Structured resume data (ResumeData format)
+        job_description: Target job description text
+        context: CoverLetterContext dict with answers to the 6 questions
+        feedback: Accumulated free-text improvement instructions (empty on first call)
+        language: Output language code
+    """
+    from app.prompts.templates import COVER_LETTER_GUIDED_PROMPT
+
+    validate_source_size(job_description, MAX_JOB_CHARACTERS)
+    output_language = get_language_name(language)
+
+    feedback_instructions = (
+        f"User Feedback / Improvement Instructions:\n{feedback.strip()}"
+        if feedback.strip()
+        else ""
+    )
+
+    prompt = COVER_LETTER_GUIDED_PROMPT.format(
+        job_description=job_description,
+        resume_data=json.dumps(resume_data),
+        output_language=output_language,
+        company_connection=context.get("company_connection", ""),
+        hero_achievement=context.get("hero_achievement", ""),
+        missing_link=context.get("missing_link", ""),
+        career_narrative=context.get("career_narrative", ""),
+        font_style=context.get("font_style", "Georgia"),
+        font_size=context.get("font_size", "11pt"),
+        job_title=context.get("job_title", ""),
+        company_name=context.get("company_name", ""),
+        feedback_instructions=feedback_instructions,
+    )
+
+    result = await complete(
+        prompt=prompt,
+        system_prompt="You are an expert executive resume writer. Write compelling, personalised cover letters.",
+        max_tokens=2048,
+    )
+
+    return result.strip()

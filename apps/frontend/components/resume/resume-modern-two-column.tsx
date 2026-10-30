@@ -11,13 +11,30 @@ import { DynamicResumeSection } from './dynamic-resume-section';
 import { DescriptionList } from './description-list';
 import { EarlierExperience, splitCondensed } from './earlier-experience';
 import { RESUME_SECTION, RESUME_SECTION_TITLE, resumeItem } from './page-break-attrs';
+import { useAdditionalGroups } from './use-additional-groups';
 import baseStyles from './styles/_base.module.css';
 import styles from './styles/modern-two-column.module.css';
+import {
+  DEFAULT_TEMPLATE_SETTINGS,
+  type PersonalInfoField,
+  type PersonalInfoSettings,
+} from '@/lib/types/template-settings';
+
+/** Maps a contact label to its toggle key, so a disabled field is skipped. */
+const CONTACT_FIELD_BY_LABEL: Record<string, PersonalInfoField> = {
+  Email: 'email',
+  Phone: 'phone',
+  Location: 'location',
+  Website: 'website',
+  LinkedIn: 'linkedin',
+  GitHub: 'github',
+};
 
 interface ResumeModernTwoColumnProps {
   earlierExperienceLabel?: string;
   data: ResumeData;
   showContactIcons?: boolean;
+  personalInfoSettings?: PersonalInfoSettings;
   sectionHeadings?: Partial<ResumeSectionHeadings>;
   fallbackLabels?: Partial<ResumeFallbackLabels>;
 }
@@ -36,30 +53,21 @@ interface ResumeModernTwoColumnProps {
 export const ResumeModernTwoColumn: React.FC<ResumeModernTwoColumnProps> = ({
   data,
   showContactIcons = false,
+  personalInfoSettings = DEFAULT_TEMPLATE_SETTINGS.personalInfo,
   sectionHeadings,
   fallbackLabels,
   earlierExperienceLabel,
 }) => {
   const { personalInfo, summary, workExperience, education, personalProjects, additional } = data;
+  const piFields = personalInfoSettings.fields;
 
-  // Drop blank/whitespace-only entries so empty lines (e.g. from editing in the
-  // builder) never render in the resume or PDF (issue #763).
-  const technicalSkills =
-    additional?.technicalSkills?.filter(
-      (item): item is string => typeof item === 'string' && item.trim() !== ''
-    ) ?? [];
-  const languages =
-    additional?.languages?.filter(
-      (item): item is string => typeof item === 'string' && item.trim() !== ''
-    ) ?? [];
-  const certificationsTraining =
-    additional?.certificationsTraining?.filter(
-      (item): item is string => typeof item === 'string' && item.trim() !== ''
-    ) ?? [];
-  const awards =
-    additional?.awards?.filter(
-      (item): item is string => typeof item === 'string' && item.trim() !== ''
-    ) ?? [];
+  // Visibility-aware groups; empty array for a group means hidden or no content.
+  const { groups: additionalGroups } = useAdditionalGroups(additional, additional?.visibility);
+  const additionalGroupMap = Object.fromEntries(additionalGroups.map((g) => [g.key, g.items]));
+  const technicalSkills = additionalGroupMap.technicalSkills ?? [];
+  const languages = additionalGroupMap.languages ?? [];
+  const certificationsTraining = additionalGroupMap.certificationsTraining ?? [];
+  const awards = additionalGroupMap.awards ?? [];
 
   // Get sorted visible sections
   const sortedSections = getSortedSections(data);
@@ -108,7 +116,8 @@ export const ResumeModernTwoColumn: React.FC<ResumeModernTwoColumnProps> = ({
 
   // Helper function to render contact details
   const renderContactDetail = (label: string, value?: string, hrefPrefix: string = '') => {
-    if (!value) return null;
+    const fieldKey = CONTACT_FIELD_BY_LABEL[label];
+    if (!value || (fieldKey && !piFields[fieldKey])) return null;
 
     let finalHrefPrefix = hrefPrefix;
     if (
@@ -156,7 +165,7 @@ export const ResumeModernTwoColumn: React.FC<ResumeModernTwoColumnProps> = ({
         <h1 className={`${baseStyles['resume-name']} ${styles.nameAccent}`}>
           {personalInfo?.name || nameFallback}
         </h1>
-        {personalInfo?.title && (
+        {piFields.title && personalInfo?.title && (
           <div className={`${baseStyles['resume-title']} mt-1`}>{personalInfo.title}</div>
         )}
         {personalInfo && (
@@ -368,7 +377,14 @@ export const ResumeModernTwoColumn: React.FC<ResumeModernTwoColumnProps> = ({
                         </span>
                       )}
                     </h4>
-                    <p className={baseStyles['resume-item-subtitle-sm']}>{edu.degree}</p>
+                    <div className="flex justify-between items-baseline">
+                      <span className={baseStyles['resume-item-subtitle-sm']}>{edu.degree}</span>
+                      {edu.grade && (
+                        <span className={`${baseStyles['resume-date']} ml-2 shrink-0`}>
+                          {edu.grade}
+                        </span>
+                      )}
+                    </div>
                     {edu.description && (
                       <p className={`${baseStyles['resume-text-xs']} ${baseStyles['resume-meta']}`}>
                         {edu.description}
@@ -433,7 +449,9 @@ export const ResumeModernTwoColumn: React.FC<ResumeModernTwoColumnProps> = ({
 
           {/* Links Section */}
           {personalInfo &&
-            (personalInfo.website || personalInfo.linkedin || personalInfo.github) && (
+            ((piFields.website && personalInfo.website) ||
+              (piFields.linkedin && personalInfo.linkedin) ||
+              (piFields.github && personalInfo.github)) && (
               <div {...RESUME_SECTION} className={baseStyles['resume-section']}>
                 <h3
                   {...RESUME_SECTION_TITLE}

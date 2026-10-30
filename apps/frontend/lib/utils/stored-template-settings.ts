@@ -16,6 +16,14 @@ export function readStoredTemplateSettings(): TemplateSettings {
         margins: { ...DEFAULT_TEMPLATE_SETTINGS.margins, ...parsed.margins },
         spacing: { ...DEFAULT_TEMPLATE_SETTINGS.spacing, ...parsed.spacing },
         fontSize: { ...DEFAULT_TEMPLATE_SETTINGS.fontSize, ...parsed.fontSize },
+        personalInfo: {
+          ...DEFAULT_TEMPLATE_SETTINGS.personalInfo,
+          ...parsed.personalInfo,
+          fields: {
+            ...DEFAULT_TEMPLATE_SETTINGS.personalInfo.fields,
+            ...parsed.personalInfo?.fields,
+          },
+        },
       };
     }
   } catch {

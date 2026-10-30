@@ -2,11 +2,16 @@ import React from 'react';
 import { Mail, Phone, MapPin, Globe, Linkedin, Github, ExternalLink } from 'lucide-react';
 import type { ResumeData, ResumeSectionHeadings } from '@/components/dashboard/resume-component';
 import { getSortedSections, getSectionMeta } from '@/lib/utils/section-helpers';
+import {
+  DEFAULT_TEMPLATE_SETTINGS,
+  type PersonalInfoSettings,
+} from '@/lib/types/template-settings';
 import { formatDateRange } from '@/lib/utils';
 import { DynamicResumeSection } from './dynamic-resume-section';
 import { DescriptionList } from './description-list';
 import { EarlierExperience, splitCondensed } from './earlier-experience';
 import { RESUME_SECTION, RESUME_SECTION_TITLE, resumeItem } from './page-break-attrs';
+import { useAdditionalGroups } from './use-additional-groups';
 import baseStyles from './styles/_base.module.css';
 import styles from './styles/swiss-two-column.module.css';
 
@@ -14,6 +19,7 @@ interface ResumeTwoColumnProps {
   earlierExperienceLabel?: string;
   data: ResumeData;
   showContactIcons?: boolean;
+  personalInfoSettings?: PersonalInfoSettings;
   sectionHeadings?: Partial<ResumeSectionHeadings>;
 }
 
@@ -31,29 +37,20 @@ interface ResumeTwoColumnProps {
 export const ResumeTwoColumn: React.FC<ResumeTwoColumnProps> = ({
   data,
   showContactIcons = false,
+  personalInfoSettings = DEFAULT_TEMPLATE_SETTINGS.personalInfo,
   sectionHeadings,
   earlierExperienceLabel,
 }) => {
   const { personalInfo, summary, workExperience, education, personalProjects, additional } = data;
+  const piFields = personalInfoSettings.fields;
 
-  // Drop blank/whitespace-only entries so empty lines (e.g. from editing in the
-  // builder) never render in the resume or PDF (issue #763).
-  const technicalSkills =
-    additional?.technicalSkills?.filter(
-      (item): item is string => typeof item === 'string' && item.trim() !== ''
-    ) ?? [];
-  const languages =
-    additional?.languages?.filter(
-      (item): item is string => typeof item === 'string' && item.trim() !== ''
-    ) ?? [];
-  const certificationsTraining =
-    additional?.certificationsTraining?.filter(
-      (item): item is string => typeof item === 'string' && item.trim() !== ''
-    ) ?? [];
-  const awards =
-    additional?.awards?.filter(
-      (item): item is string => typeof item === 'string' && item.trim() !== ''
-    ) ?? [];
+  // Visibility-aware groups; empty array for a group means hidden or no content.
+  const { groups: additionalGroups } = useAdditionalGroups(additional, additional?.visibility);
+  const additionalGroupMap = Object.fromEntries(additionalGroups.map((g) => [g.key, g.items]));
+  const technicalSkills = additionalGroupMap.technicalSkills ?? [];
+  const languages = additionalGroupMap.languages ?? [];
+  const certificationsTraining = additionalGroupMap.certificationsTraining ?? [];
+  const awards = additionalGroupMap.awards ?? [];
 
   // Get sorted visible sections
   const sortedSections = getSortedSections(data);
@@ -157,7 +154,7 @@ export const ResumeTwoColumn: React.FC<ResumeTwoColumnProps> = ({
           )}
 
           {/* Title - Centered, below name */}
-          {personalInfo.title && (
+          {piFields.title && personalInfo.title && (
             <h2
               className={`${baseStyles['resume-title']} ${baseStyles['resume-meta']} tracking-wide uppercase mb-3`}
             >
@@ -169,32 +166,34 @@ export const ResumeTwoColumn: React.FC<ResumeTwoColumnProps> = ({
           <div
             className={`flex flex-wrap justify-center gap-x-1 gap-y-1 ${baseStyles['resume-meta']}`}
           >
-            {personalInfo.email && renderContactDetail('Email', personalInfo.email, 'mailto:')}
-            {personalInfo.phone && (
+            {piFields.email &&
+              personalInfo.email &&
+              renderContactDetail('Email', personalInfo.email, 'mailto:')}
+            {piFields.phone && personalInfo.phone && (
               <>
                 <span className={baseStyles['text-muted']}>,</span>
                 {renderContactDetail('Phone', personalInfo.phone, 'tel:')}
               </>
             )}
-            {personalInfo.location && (
+            {piFields.location && personalInfo.location && (
               <>
                 <span className={baseStyles['text-muted']}>,</span>
                 {renderContactDetail('Location', personalInfo.location)}
               </>
             )}
-            {personalInfo.website && (
+            {piFields.website && personalInfo.website && (
               <>
                 <span className={baseStyles['text-muted']}>,</span>
                 {renderContactDetail('Website', personalInfo.website)}
               </>
             )}
-            {personalInfo.linkedin && (
+            {piFields.linkedin && personalInfo.linkedin && (
               <>
                 <span className={baseStyles['text-muted']}>,</span>
                 {renderContactDetail('LinkedIn', personalInfo.linkedin)}
               </>
             )}
-            {personalInfo.github && (
+            {piFields.github && personalInfo.github && (
               <>
                 <span className={baseStyles['text-muted']}>,</span>
                 {renderContactDetail('GitHub', personalInfo.github)}
@@ -400,7 +399,14 @@ export const ResumeTwoColumn: React.FC<ResumeTwoColumnProps> = ({
                         </span>
                       )}
                     </h4>
-                    <p className={baseStyles['resume-item-subtitle-sm']}>{edu.degree}</p>
+                    <div className="flex justify-between items-baseline">
+                      <span className={baseStyles['resume-item-subtitle-sm']}>{edu.degree}</span>
+                      {edu.grade && (
+                        <span className={`${baseStyles['resume-date']} ml-2 shrink-0`}>
+                          {edu.grade}
+                        </span>
+                      )}
+                    </div>
                     {edu.description && (
                       <p className={`${baseStyles['resume-text-xs']} ${baseStyles['resume-meta']}`}>
                         {edu.description}

@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ListNumbers, SquaresFour } from '@phosphor-icons/react';
+import { ListNumbers, SquaresFour, ChartBar } from '@phosphor-icons/react';
 import { CommunityLinks } from '@/components/common/community-links';
 import { buttonClass } from '@/components/ui/button';
 import { PageFrame } from '@/components/ui/page-frame';
@@ -13,10 +13,16 @@ import { useTranslations } from '@/lib/i18n';
 
 export const SwissGrid = ({
   banner,
+  title,
+  subtitle,
   children,
 }: {
   /** Page-level alerts, shown inside the frame above the tiles. */
   banner?: React.ReactNode;
+  /** Header title; defaults to the dashboard label. */
+  title?: React.ReactNode;
+  /** Header subtitle; defaults to the dashboard instruction. */
+  subtitle?: React.ReactNode;
   children: React.ReactNode;
 }) => {
   const { t } = useTranslations();
@@ -24,8 +30,8 @@ export const SwissGrid = ({
   return (
     <PageFrame height="screen">
       <PageHeader>
-        <PageHeader.Title>{t('nav.dashboard')}</PageHeader.Title>
-        <PageHeader.Subtitle>{t('dashboard.selectModule')}</PageHeader.Subtitle>
+        <PageHeader.Title>{title ?? t('nav.dashboard')}</PageHeader.Title>
+        <PageHeader.Subtitle>{subtitle ?? t('dashboard.selectModule')}</PageHeader.Subtitle>
       </PageHeader>
 
       {/* Content Grid - Scrollable area with NO padding.
@@ -63,6 +69,13 @@ export const SwissGrid = ({
           >
             <SquaresFour aria-hidden="true" />
             {t('nav.applicationTracker')}
+          </Link>
+          <Link
+            href="/usage"
+            className={buttonClass({ variant: 'outline', className: 'min-w-36' })}
+          >
+            <ChartBar aria-hidden="true" />
+            {t('nav.usage')}
           </Link>
           <Link
             href="/settings"

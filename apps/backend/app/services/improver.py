@@ -512,6 +512,45 @@ def apply_diffs(
             actual_value.append(new_skill)
             applied.append(change)
 
+        elif action == "remove_skill":
+            if path != "additional.technicalSkills":
+                logger.info("Diff rejected (remove_skill outside skills): %s", path)
+                rejected.append(change)
+                continue
+            if not isinstance(actual_value, list):
+                logger.info("Diff rejected (remove_skill on non-list): %s", path)
+                rejected.append(change)
+                continue
+            if not isinstance(change.value, str) or not change.value.strip():
+                logger.info("Diff rejected (remove_skill empty/non-string): %s", path)
+                rejected.append(change)
+                continue
+            skill_to_remove = change.value.strip()
+            if _normalize_skill_key(skill_to_remove) in allowed_skill_keys:
+                logger.info(
+                    "Diff rejected (remove_skill targets a JD-relevant skill): %s",
+                    skill_to_remove,
+                )
+                rejected.append(change)
+                continue
+            cf = skill_to_remove.casefold()
+            idx = next(
+                (
+                    i
+                    for i, s in enumerate(actual_value)
+                    if isinstance(s, str) and s.casefold() == cf
+                ),
+                None,
+            )
+            if idx is None:
+                logger.info(
+                    "Diff rejected (remove_skill skill not found): %s", skill_to_remove
+                )
+                rejected.append(change)
+                continue
+            actual_value.pop(idx)
+            applied.append(change)
+
         else:
             logger.info("Diff rejected (unknown action): %s", action)
             rejected.append(change)
@@ -571,6 +610,7 @@ def verify_diff_result(
     for key, id_fields in [
         ("workExperience", ["company", "title"]),
         ("education", ["institution", "degree"]),
+        ("personalProjects", ["name", "role"]),
     ]:
         orig_entries = original.get(key, [])
         result_entries = result.get(key, [])
@@ -1578,6 +1618,12 @@ def calculate_resume_diff(
             ]
         ),
         high_risk_changes=len([c for c in changes if c.confidence == "high"]),
+        awards_added=len(
+            [c for c in changes if c.field_type == "award" and c.change_type == "added"]
+        ),
+        languages_added=len(
+            [c for c in changes if c.field_type == "language" and c.change_type == "added"]
+        ),
     )
 
     return summary, changes

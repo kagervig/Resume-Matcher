@@ -114,6 +114,14 @@ describe('localizeDefaultSectionMeta', () => {
     );
     expect(out[0].displayName).toBe('Summary');
   });
+
+  it('migrates a legacy default heading to the localized current default', () => {
+    const out = localizeDefaultSectionMeta(
+      [meta({ id: 'additional', displayName: 'Skills & Awards', isDefault: true })],
+      t
+    );
+    expect(out[0].displayName).toBe('t:resume.sections.skills');
+  });
 });
 
 describe('withLocalizedDefaultSections', () => {

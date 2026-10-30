@@ -209,6 +209,21 @@ written in the posting; use an empty string for either if it is not stated.
 Job description:
 {job_description}"""
 
+SUMMARIZE_JD_PROMPT = """Summarize this job description to make it easier to digest. Output ONLY the JSON object, no other text.
+
+Example format:
+{{
+  "summary": "A 1-2 sentence plain-language overview of the role and what the team needs.",
+  "core_competencies": ["Backend API design", "Cloud infrastructure", "Team leadership"]
+}}
+
+Write "summary" as 1-2 sentences. List up to 6 "core_competencies" as short noun
+phrases naming the most important abilities the role requires. Use only what the
+posting states; do not invent requirements.
+
+Job description:
+{job_description}"""
+
 CRITICAL_TRUTHFULNESS_RULES_TEMPLATE = """CRITICAL TRUTHFULNESS RULES - NEVER VIOLATE:
 1. DO NOT add any skill, tool, technology, or certification that is not explicitly mentioned in the original resume
 2. DO NOT invent numeric achievements (e.g., "increased by 30%") unless they exist in original
@@ -257,6 +272,7 @@ Rules:
 - Keep proper nouns (names, company names, locations) unchanged
 - For customSections: preserve exact structure, item count, titles, subtitles, and years. If an item's description is an empty array [] in the original, keep it empty []. Do NOT generate descriptions for items that had none.
 - Copy the "years" field values EXACTLY as they appear in the original resume (including any month prefixes like "Jan 2020 - Present"). Do not shorten, reformat, or drop months.
+- Do NOT change project names, years, github/repo URLs, or website URLs in personalProjects entries
 - If the resume is non-technical, do NOT add technical jargon
 - Do NOT use em dash ("—") anywhere in the writing/output, even if it exists, remove it
 
@@ -287,6 +303,7 @@ Rules:
 - Preserve descriptionStyles arrays and keep them aligned one-to-one with description arrays
 - For customSections: preserve exact structure, item count, titles, subtitles, and years. If an item's description is an empty array [] in the original, keep it empty []. Do NOT generate descriptions for items that had none.
 - Copy the "years" field values EXACTLY as they appear in the original resume (including any month prefixes like "Jan 2020 - Present"). Do not shorten, reformat, or drop months.
+- Do NOT change project names, years, github/repo URLs, or website URLs in personalProjects entries
 - If resume is non-technical, keep language non-technical while still aligning keywords
 - Do NOT use em dash ("—") anywhere in the writing/output, even if it exists, remove it
 
@@ -319,6 +336,7 @@ Rules:
 - For customSections: preserve exact structure, item count, titles, subtitles, and years. If an item's description is an empty array [] in the original, keep it empty []. Do NOT generate descriptions for items that had none.
 - Improve custom section content the same way as standard sections
 - Copy the "years" field values EXACTLY as they appear in the original resume (including any month prefixes like "Jan 2020 - Present"). Do not shorten, reformat, or drop months.
+- Do NOT change project names, years, github/repo URLs, or website URLs in personalProjects entries
 - Calculate and emphasize total relevant experience duration when it matches requirements
 - Do NOT use em dash ("—") anywhere in the writing/output, even if it exists, remove it
 
@@ -581,7 +599,7 @@ PATHS you can target:
 - "personalProjects[i].description[j]" — a specific project bullet
 - "personalProjects[i].description" — append a new project bullet (action: "append")
 - "education[i].description" — the education entry's description text (replace only; it is a single string, not a list)
-- "additional.technicalSkills" — reorder the skills list (action: "reorder") or add one verified skill (action: "add_skill")
+- "additional.technicalSkills" — reorder the skills list (action: "reorder"), add one verified skill (action: "add_skill"), or remove one skill that is clearly irrelevant to this job and NOT in the verified skill targets (action: "remove_skill")
 - "additional.languages" — reorder the languages list (action: "reorder")
 - "additional.certificationsTraining" — reorder the certifications list (action: "reorder")
 - "additional.awards" — reorder the awards list (action: "reorder")
@@ -630,7 +648,69 @@ Output this exact JSON format, nothing else:
       "original": null,
       "value": "verified skill target missing from the skills list",
       "reason": "added verified JD skill for review"
+    }},
+    {{
+      "path": "additional.technicalSkills",
+      "action": "remove_skill",
+      "original": null,
+      "value": "skill clearly irrelevant to this job (must NOT be in verified skill targets)",
+      "reason": "removed because it is unrelated to the target role and JD"
     }}
   ],
   "strategy_notes": "brief summary of the tailoring approach"
 }}"""
+
+COVER_LETTER_GUIDED_PROMPT = """You are an expert executive resume writer. Write a compelling cover letter.
+
+IMPORTANT: Write in {output_language}.
+
+Job Description:
+{job_description}
+
+Candidate Resume (JSON):
+{resume_data}
+
+Candidate-Provided Context:
+- Company Connection / Why Us: {company_connection}
+- Hero Achievement: {hero_achievement}
+- Missing Link (skill/gap bridging): {missing_link}
+- Career Narrative: {career_narrative}
+- Target Role & Company (for RE: line): {job_title} @ {company_name}
+
+{feedback_instructions}
+
+Requirements:
+- Length: 300-400 words (body paragraphs only, excluding header block)
+- Output the full letter as plain text in this exact structure:
+
+[Candidate full name]
+[Candidate email] | [Candidate phone] | [Candidate location]
+[Candidate LinkedIn if present]
+
+[Today's date -- formatted as Month Day, Year e.g. October 15, 2026]
+
+[Hiring Manager name if determinable from JD, otherwise "Hiring Manager"]
+[Company name]
+
+RE: {job_title} position @ {company_name}
+
+[Paragraph 1 -- The Hook: state the position, lead with the company-connection detail the candidate provided, give a sharp value proposition -- 2-3 sentences]
+
+[Paragraph 2 -- The Impact: 1-2 accomplishments from the candidate's hero achievement that directly match JD requirements; use story + metrics -- 3-4 sentences]
+
+[Paragraph 3 -- The Strategic Fit: soft skills, culture/mission alignment, why this is the natural next step given the career narrative -- 2-3 sentences]
+
+[Paragraph 4 -- Call to Action: professional closing, invite interview, one sentence]
+
+Sincerely,
+
+[Candidate full name]
+
+Rules:
+- Use ONLY information from the resume JSON and the context provided above
+- Do NOT invent metrics, employers, skills, or achievements not in the resume
+- Do NOT use em dash anywhere in the output
+- Do NOT open with "I am writing to express..."
+- Tone: confident professional, not eager applicant
+- Output plain text only -- no markdown, no JSON
+"""

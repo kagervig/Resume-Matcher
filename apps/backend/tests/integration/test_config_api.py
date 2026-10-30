@@ -312,6 +312,91 @@ class TestFeatureConfig:
         assert saved["enable_cover_letter"] is True
         assert saved["enable_interview_prep"] is True
 
+    @patch("app.routers.config._load_config")
+    async def test_get_features_returns_preserve_education_default_true(
+        self, mock_load, client
+    ):
+        mock_load.return_value = {}
+        async with client:
+            resp = await client.get("/api/v1/config/features")
+        assert resp.status_code == 200
+        assert resp.json()["preserve_education"] is True
+
+    @patch("app.routers.config._load_config")
+    async def test_get_features_returns_preserve_education_when_stored_false(
+        self, mock_load, client
+    ):
+        mock_load.return_value = {"preserve_education": False}
+        async with client:
+            resp = await client.get("/api/v1/config/features")
+        assert resp.status_code == 200
+        assert resp.json()["preserve_education"] is False
+
+    @patch("app.routers.config._save_config")
+    @patch("app.routers.config._load_config")
+    async def test_put_features_stores_preserve_education(
+        self, mock_load, mock_save, client
+    ):
+        mock_load.return_value = {}
+        async with client:
+            resp = await client.put(
+                "/api/v1/config/features",
+                json={"preserve_education": False},
+            )
+        assert resp.status_code == 200
+        assert resp.json()["preserve_education"] is False
+        saved = mock_save.call_args.args[0]
+        assert saved["preserve_education"] is False
+
+    @patch("app.routers.config._save_config")
+    @patch("app.routers.config._load_config")
+    async def test_put_features_omitting_preserve_education_leaves_it_unchanged(
+        self, mock_load, mock_save, client
+    ):
+        mock_load.return_value = {"preserve_education": False}
+        async with client:
+            resp = await client.put(
+                "/api/v1/config/features",
+                json={"enable_cover_letter": True},
+            )
+        assert resp.status_code == 200
+        saved = mock_save.call_args.args[0]
+        assert saved.get("preserve_education") is False
+
+
+class TestCoverLetterSignatureConfig:
+    """GET/PUT /api/v1/config/cover-letter-signature"""
+
+    @patch("app.routers.config._load_config")
+    async def test_get_default_signature(self, mock_load, client):
+        mock_load.return_value = {"default_cover_letter_signature": "Best,\n\nJane"}
+        async with client:
+            resp = await client.get("/api/v1/config/cover-letter-signature")
+        assert resp.status_code == 200
+        assert resp.json()["signature"] == "Best,\n\nJane"
+
+    @patch("app.routers.config._load_config")
+    async def test_get_default_signature_missing_returns_empty(self, mock_load, client):
+        mock_load.return_value = {}
+        async with client:
+            resp = await client.get("/api/v1/config/cover-letter-signature")
+        assert resp.status_code == 200
+        assert resp.json()["signature"] == ""
+
+    @patch("app.routers.config._save_config")
+    @patch("app.routers.config._load_config")
+    async def test_put_default_signature(self, mock_load, mock_save, client):
+        mock_load.return_value = {}
+        async with client:
+            resp = await client.put(
+                "/api/v1/config/cover-letter-signature",
+                json={"signature": "Kind regards,\n\nJane Doe"},
+            )
+        assert resp.status_code == 200
+        assert resp.json()["signature"] == "Kind regards,\n\nJane Doe"
+        saved = mock_save.call_args.args[0]
+        assert saved["default_cover_letter_signature"] == "Kind regards,\n\nJane Doe"
+
 
 class TestFeaturePrompts:
     """GET/PUT /api/v1/config/feature-prompts"""

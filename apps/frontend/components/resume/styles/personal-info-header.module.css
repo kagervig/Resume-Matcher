@@ -1,0 +1,93 @@
+/* Structure only. Typography comes from _base.module.css (resume-name, etc.)
+   and per-template overrides, so each template keeps its identity. */
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.alignLeft {
+  text-align: left;
+  align-items: flex-start;
+}
+.alignCenter {
+  text-align: center;
+  align-items: center;
+}
+.alignRight {
+  text-align: right;
+  align-items: flex-end;
+}
+
+/* Name + inline title share one baseline row. */
+.nameRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.nameCentered {
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+
+/* Stacked name + title, used as the first column of the multi-column layouts. */
+.nameBlockStacked {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+/* Contact list: a wrapping inline row for the one-/two-line layouts. */
+.contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+}
+.contactsCenter {
+  justify-content: center;
+}
+.contactsRight {
+  justify-content: flex-end;
+}
+
+.sep {
+  opacity: 0.5;
+}
+
+/* One-line: name block and contacts on a single inline row. */
+.oneLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+}
+
+/* Multi-column: name block is the first grid column; contacts fill the rest. */
+.grid {
+  display: grid;
+  gap: 0.25rem 1rem;
+  align-items: start;
+}
+.grid2 {
+  grid-template-columns: auto 1fr;
+}
+.grid3 {
+  grid-template-columns: auto 1fr;
+}
+/* In a 3-column layout the contacts themselves split into two columns. */
+.contactsColumns {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.75rem;
+}
+.contactsColumns2 {
+  columns: 2;
+  column-gap: 1rem;
+}
+.contactStacked {
+  display: block;
+}

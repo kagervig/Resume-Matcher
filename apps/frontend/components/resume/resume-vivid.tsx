@@ -11,9 +11,15 @@ import type {
 } from '@/components/dashboard/resume-component';
 import { getSortedSections, getSectionMeta } from '@/lib/utils/section-helpers';
 import { formatDateRange } from '@/lib/utils';
+import {
+  DEFAULT_TEMPLATE_SETTINGS,
+  type PersonalInfoField,
+  type PersonalInfoSettings,
+} from '@/lib/types/template-settings';
 import { DescriptionList } from './description-list';
 import { EarlierExperience, splitCondensed } from './earlier-experience';
 import { RESUME_SECTION, RESUME_SECTION_TITLE, resumeItem } from './page-break-attrs';
+import { useAdditionalGroups } from './use-additional-groups';
 import baseStyles from './styles/_base.module.css';
 import styles from './styles/vivid.module.css';
 
@@ -21,6 +27,7 @@ interface ResumeVividProps {
   earlierExperienceLabel?: string;
   data: ResumeData;
   showContactIcons?: boolean;
+  personalInfoSettings?: PersonalInfoSettings;
   sectionHeadings?: Partial<ResumeSectionHeadings>;
   fallbackLabels?: Partial<ResumeFallbackLabels>;
 }
@@ -53,13 +60,25 @@ const contactIcons: Record<string, React.ReactNode> = {
   GitHub: <Github size={11} />,
 };
 
+/** Maps a contact label to its toggle key, so a disabled field is skipped. */
+const CONTACT_FIELD_BY_LABEL: Record<string, PersonalInfoField> = {
+  Email: 'email',
+  Phone: 'phone',
+  Location: 'location',
+  Website: 'website',
+  LinkedIn: 'linkedin',
+  GitHub: 'github',
+};
+
 export const renderContactDetail = (
   showContactIcons: boolean,
   label: string,
   value?: string,
-  hrefPrefix: string = ''
+  hrefPrefix: string = '',
+  fields?: Record<PersonalInfoField, boolean>
 ) => {
-  if (!value) return null;
+  const fieldKey = CONTACT_FIELD_BY_LABEL[label];
+  if (!value || (fields && fieldKey && !fields[fieldKey])) return null;
 
   let finalHrefPrefix = hrefPrefix;
   if (
@@ -123,11 +142,13 @@ export const VividHeader: React.FC<{
   showContactIcons: boolean;
   nameFallback?: string;
   nameRestClassName?: string;
+  fields?: Record<PersonalInfoField, boolean>;
 }> = ({
   personalInfo,
   showContactIcons,
   nameFallback = 'Your Name',
   nameRestClassName = styles.nameRestSolid,
+  fields = DEFAULT_TEMPLATE_SETTINGS.personalInfo.fields,
 }) => {
   const fullName = personalInfo?.name || nameFallback;
   const firstSpace = fullName.indexOf(' ');
@@ -140,15 +161,17 @@ export const VividHeader: React.FC<{
         <span className={styles.nameFirst}>{nameFirst}</span>
         {nameRest && <span className={nameRestClassName}> {nameRest}</span>}
       </h1>
-      {personalInfo?.title && <div className={styles.titleLine}>{personalInfo.title}</div>}
+      {fields.title && personalInfo?.title && (
+        <div className={styles.titleLine}>{personalInfo.title}</div>
+      )}
       {personalInfo && (
         <div className={`flex flex-wrap gap-x-4 gap-y-1 mt-2 ${styles.contactRow}`}>
-          {renderContactDetail(showContactIcons, 'Website', personalInfo.website)}
-          {renderContactDetail(showContactIcons, 'LinkedIn', personalInfo.linkedin)}
-          {renderContactDetail(showContactIcons, 'GitHub', personalInfo.github)}
-          {renderContactDetail(showContactIcons, 'Email', personalInfo.email, 'mailto:')}
-          {renderContactDetail(showContactIcons, 'Phone', personalInfo.phone, 'tel:')}
-          {renderContactDetail(showContactIcons, 'Location', personalInfo.location)}
+          {renderContactDetail(showContactIcons, 'Website', personalInfo.website, '', fields)}
+          {renderContactDetail(showContactIcons, 'LinkedIn', personalInfo.linkedin, '', fields)}
+          {renderContactDetail(showContactIcons, 'GitHub', personalInfo.github, '', fields)}
+          {renderContactDetail(showContactIcons, 'Email', personalInfo.email, 'mailto:', fields)}
+          {renderContactDetail(showContactIcons, 'Phone', personalInfo.phone, 'tel:', fields)}
+          {renderContactDetail(showContactIcons, 'Location', personalInfo.location, '', fields)}
         </div>
       )}
     </div>
@@ -259,16 +282,20 @@ export const VividProjectItem: React.FC<{ project: Project; roleClassName?: stri
 export const ResumeVivid: React.FC<ResumeVividProps> = ({
   data,
   showContactIcons = false,
+  personalInfoSettings = DEFAULT_TEMPLATE_SETTINGS.personalInfo,
   sectionHeadings,
   fallbackLabels,
   earlierExperienceLabel,
 }) => {
   const { personalInfo, summary, workExperience, education, personalProjects, additional } = data;
 
-  const technicalSkills = cleanItems(additional?.technicalSkills);
-  const languages = cleanItems(additional?.languages);
-  const certificationsTraining = cleanItems(additional?.certificationsTraining);
-  const awards = cleanItems(additional?.awards);
+  // Visibility-aware groups; empty array for a group means hidden or no content.
+  const { groups: additionalGroups } = useAdditionalGroups(additional, additional?.visibility);
+  const additionalGroupMap = Object.fromEntries(additionalGroups.map((g) => [g.key, g.items]));
+  const technicalSkills = additionalGroupMap.technicalSkills ?? [];
+  const languages = additionalGroupMap.languages ?? [];
+  const certificationsTraining = additionalGroupMap.certificationsTraining ?? [];
+  const awards = additionalGroupMap.awards ?? [];
 
   const sortedSections = getSortedSections(data);
   const allSections = getSectionMeta(data);
@@ -293,6 +320,7 @@ export const ResumeVivid: React.FC<ResumeVividProps> = ({
         personalInfo={personalInfo}
         showContactIcons={showContactIcons}
         nameFallback={fallbackLabels?.name}
+        fields={personalInfoSettings.fields}
       />
 
       {/* Two-Column Grid */}
@@ -395,6 +423,9 @@ export const ResumeVivid: React.FC<ResumeVividProps> = ({
                         {formatDateRange(edu.years)}
                       </p>
                     )}
+                    {edu.grade && (
+                      <p className={`${baseStyles['resume-date']} text-right`}>{edu.grade}</p>
+                    )}
                     {edu.description && (
                       <p className={`${baseStyles['resume-text-xs']} ${baseStyles['resume-meta']}`}>
                         {edu.description}
@@ -430,17 +461,17 @@ export const ResumeVivid: React.FC<ResumeVividProps> = ({
                 <div
                   className={`${baseStyles['resume-stack-tight']} ${baseStyles['resume-meta-sm']}`}
                 >
-                  {personalInfo.linkedin && (
+                  {personalInfoSettings.fields.linkedin && personalInfo.linkedin && (
                     <div>
                       {renderContactDetail(showContactIcons, 'LinkedIn', personalInfo.linkedin)}
                     </div>
                   )}
-                  {personalInfo.github && (
+                  {personalInfoSettings.fields.github && personalInfo.github && (
                     <div>
                       {renderContactDetail(showContactIcons, 'GitHub', personalInfo.github)}
                     </div>
                   )}
-                  {personalInfo.website && (
+                  {personalInfoSettings.fields.website && personalInfo.website && (
                     <div>
                       {renderContactDetail(showContactIcons, 'Website', personalInfo.website)}
                     </div>

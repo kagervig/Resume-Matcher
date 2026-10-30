@@ -444,10 +444,10 @@ def _merge_entries(
     return result
 
 
-def _merge_additional(source: Any, candidate: Any) -> dict[str, list[str]]:
+def _merge_additional(source: Any, candidate: Any) -> dict[str, Any]:
     source_dict = source if isinstance(source, dict) else {}
     candidate_dict = candidate if isinstance(candidate, dict) else {}
-    result: dict[str, list[str]] = {}
+    result: dict[str, Any] = {}
     for field in ("technicalSkills", "languages", "certificationsTraining", "awards"):
         source_items = [
             item for item in source_dict.get(field, []) if isinstance(item, str)
@@ -474,6 +474,11 @@ def _merge_additional(source: Any, candidate: Any) -> dict[str, list[str]]:
                 remaining_candidate_items[key] -= 1
             else:
                 result[field].append(item)
+    # Preserve visibility from candidate when present; otherwise keep source's.
+    if "visibility" in candidate_dict:
+        result["visibility"] = candidate_dict["visibility"]
+    elif "visibility" in source_dict:
+        result["visibility"] = source_dict["visibility"]
     return result
 
 
@@ -519,6 +524,7 @@ def finalize_ai_resume(
     allow_review_claims: bool = True,
     allow_appended_rows: bool = False,
     fixed_row_sections: tuple[str, ...] = (),
+    preserve_education: bool = True,
 ) -> dict[str, Any]:
     """Return a non-mutating AI result that preserves the source contract.
 
@@ -527,6 +533,8 @@ def finalize_ai_resume(
     extra rows, missing sections and identity drift are always repaired.
     Entries in ``fixed_row_sections`` never keep appended rows, and a multi-line
     rewrite of one of their rows stays one row.
+    When ``preserve_education`` is true, the education section is copied verbatim
+    from source without any AI-authored changes.
     """
     result = copy.deepcopy(candidate) if isinstance(candidate, dict) else {}
     result["personalInfo"] = copy.deepcopy(source.get("personalInfo", {}))
@@ -543,6 +551,9 @@ def finalize_ai_resume(
             result["summary"] = source_summary
 
     for section in ("workExperience", "education", "personalProjects"):
+        if preserve_education and section == "education":
+            result["education"] = copy.deepcopy(source.get("education", []))
+            continue
         result[section] = _merge_entries(
             source.get(section),
             result.get(section),

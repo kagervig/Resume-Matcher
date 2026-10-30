@@ -32,7 +32,8 @@
     "keysCleared": "Chaves de API removidas com sucesso",
     "databaseReset": "Banco de dados redefinido com sucesso",
     "popupBlocked": "Popup bloqueado. Por favor, permita popups ou abra esta URL manualmente: {url}",
-    "resumeDeleted": "Este currículo foi excluído. Envie ou selecione outro currículo."
+    "resumeDeleted": "Este currículo foi excluído. Envie ou selecione outro currículo.",
+    "noResults": "Nenhum resultado"
   },
   "home": {
     "brandLine1": "Resume",
@@ -61,7 +62,9 @@
     "backToDashboard": "Voltar ao Painel",
     "goToSettings": "Ir para Configurações",
     "applicationTracker": "Acompanhamento de candidaturas",
-    "queue": "Fila de personalização"
+    "queue": "Fila de personalização",
+    "usage": "Uso",
+    "allResumes": "Todos os Currículos"
   },
   "dashboard": {
     "title": "Painel",
@@ -127,7 +130,20 @@
     "setDefault": "Definir como padrão",
     "duplicate": "Duplicar",
     "addMasterTrack": "Adicionar trilha principal",
-    "masterLimitReached": "Até {max} currículos principais"
+    "masterLimitReached": "Até {max} currículos principais",
+    "missionControl": "Central de Controle",
+    "pendingApplications": "Candidaturas Pendentes",
+    "pendingCount": "{count} pendentes",
+    "appliedCount": "{count} enviadas",
+    "iApplied": "Já Me Candidatei",
+    "iApplying": "Marcando...",
+    "iAppliedError": "Não foi possível marcar como enviado. Tente novamente.",
+    "viewAllResumes": "Todos os Currículos",
+    "generateNew": "Gerar Novo Currículo",
+    "sessionCost": "Custo da Sessão",
+    "sessionCalls": "{count} chamadas",
+    "pending": "Pendente",
+    "applied": "Enviado"
   },
   "builder": {
     "panels": {
@@ -188,7 +204,8 @@
         "languages": "Inglês\nEspanhol",
         "certifications": "AWS Solution Architect\nGoogle Analytics",
         "awards": "Funcionário do Mês\nVencedor de Hackathon"
-      }
+      },
+      "toggleDescription": "Mostrar no currículo"
     },
     "customSections": {
       "dialogTitle": "Adicionar Seção Personalizada",
@@ -309,6 +326,18 @@
       }
     },
     "jdMatch": {
+      "summary": {
+        "title": "Resumo da vaga",
+        "description": "Um resumo com IA desta descrição da vaga — o essencial, as competências principais e as palavras-chave.",
+        "generate": "Resumir vaga",
+        "regenerate": "Regenerar",
+        "generating": "Resumindo…",
+        "competenciesHeading": "Competências principais",
+        "keywordsHeading": "Palavras-chave relevantes",
+        "generateFailed": "Não foi possível gerar o resumo. Tente novamente.",
+        "loadFailed": "Não foi possível carregar o resumo.",
+        "empty": "Ainda não há resumo. Gere um para digerir esta descrição da vaga."
+      },
       "yourResume": "Seu Currículo",
       "matchingKeywordsHighlighted": "(palavras-chave correspondentes destacadas)",
       "jobDescriptionTitle": "Descrição da Vaga",
@@ -398,6 +427,7 @@
         "fields": {
           "institution": "Instituição",
           "degree": "Formação",
+          "grade": "Nota / GPA",
           "description": "Descrição",
           "descriptionOptional": "Descrição (Opcional)"
         },
@@ -405,6 +435,7 @@
           "institution": "Nome da Universidade",
           "degree": "Bacharelado em Ciência da Computação",
           "years": "Ago 2016 - Mai 2020",
+          "grade": "3.9 / 4.0",
           "description": "Detalhes adicionais..."
         }
       },
@@ -513,7 +544,35 @@
       "effectiveHeaderFont": "Fonte do Cabeçalho",
       "effectiveBodyFont": "Fonte do Corpo",
       "compactHint": "O modo compacto reduz espaçamento e altura da linha. Margens e tamanho de fonte base permanecem literais.",
-      "resetDefaults": "Restaurar Padrões"
+      "resetDefaults": "Restaurar Padrões",
+      "personalInfo": {
+        "title": "Informações pessoais",
+        "nameStyle": "Estilo do nome",
+        "layout": "Layout de contato",
+        "fields": "Incluir campos",
+        "nameStyles": {
+          "large": "Grande",
+          "centered": "Centralizado",
+          "match": "Igualar"
+        },
+        "layouts": {
+          "two-line-center": "Centro",
+          "two-line-2col": "2 col",
+          "two-line-3col": "3 col",
+          "one-line": "1 linha",
+          "two-line-left": "Esq.",
+          "two-line-right": "Dir."
+        },
+        "fieldLabels": {
+          "title": "Cargo",
+          "email": "E-mail",
+          "phone": "Telefone",
+          "location": "Local",
+          "website": "Site",
+          "linkedin": "LinkedIn",
+          "github": "GitHub"
+        }
+      }
     },
     "personalInfoForm": {
       "placeholders": {
@@ -547,13 +606,17 @@
       "downloadNotAvailable": "Download só está disponível para currículos salvos.",
       "downloadFailed": "Falha ao baixar currículo. Por favor, tente novamente.",
       "coverLetterSaveFailed": "Falha ao salvar carta de apresentação. Por favor, tente novamente.",
+      "coverLetterSignatureSaveSuccess": "Assinatura salva",
+      "coverLetterSignatureSaveFailed": "Falha ao salvar assinatura. Por favor, tente novamente.",
       "coverLetterDownloadRequiresResume": "Salve o currículo primeiro para baixar a carta de apresentação.",
       "coverLetterMissing": "Nenhuma carta de apresentação disponível. Habilite a geração de carta em Configurações e personalize um currículo.",
       "coverLetterDownloadFailed": "Falha ao baixar carta de apresentação: {error}",
       "outreachSaveFailed": "Falha ao salvar mensagem de contato. Por favor, tente novamente.",
       "coverLetterGenerateFailed": "Falha ao gerar carta de apresentação: {error}",
       "outreachGenerateFailed": "Falha ao gerar mensagem de contato: {error}",
-      "interviewPrepGenerateFailed": "Falha ao gerar preparação para entrevista: {error}"
+      "interviewPrepGenerateFailed": "Falha ao gerar preparação para entrevista: {error}",
+      "coverLetterSignatureDefaultSaveSuccess": "Salva como a assinatura padrão para todas as cartas de apresentação.",
+      "coverLetterSignatureDefaultSaveFailed": "Falha ao definir a assinatura padrão. Tente novamente."
     },
     "leaveWithoutDraft": {
       "title": "Sair com alterações não salvas?",
@@ -804,7 +867,13 @@
       "languageChanges": "Alterações de idiomas",
       "awardChanges": "Alterações de prêmios",
       "rejectButton": "Rejeitar e regenerar",
-      "confirmButton": "Confirmar e salvar"
+      "confirmButton": "Confirmar e salvar",
+      "totalChanges": "Total de Alterações",
+      "awardsAdded": "Prêmios Adicionados",
+      "languagesAdded": "Idiomas Adicionados",
+      "noChangesTitle": "Nenhuma Alteração Aplicada",
+      "noChangesMessage": "O currículo adaptado é idêntico ao original. Revise os avisos abaixo.",
+      "warningsList": "Avisos"
     },
     "atsScore": {
       "title": "Detalhamento da pontuação ATS",
@@ -840,6 +909,10 @@
     },
     "selectResumeDescription": "Os marcadores são extraídos deste currículo principal.",
     "tailoringLabel": "Personalizando:",
+    "company": "Empresa",
+    "companyPlaceholder": "Acme Corp",
+    "role": "Cargo",
+    "rolePlaceholder": "Engenheiro de software sénior",
     "jobDescriptionHint": "Cole o anúncio completo da vaga, com responsabilidades e requisitos (mínimo de 50 caracteres).",
     "steps": {
       "label": "Como funciona a personalização",
@@ -856,6 +929,19 @@
       "unavailable": "Ajuste de página indisponível",
       "finalOver": "Pode passar do limite de páginas após a reescrita",
       "notRechecked": "Ajuste ao limite de páginas não verificado após a reescrita"
+    },
+    "rating": {
+      "prompt": "Avalie este resultado:",
+      "thanks": "Obrigado pelo feedback!",
+      "good": "Bom",
+      "bad": "Precisa melhorar",
+      "error": "Não foi possível salvar a avaliação."
+    },
+    "applied": {
+      "bannerTitle": "Currículo adaptado",
+      "bannerDescription": "{count} alteração(ões) aplicada(s).",
+      "bannerNone": "Nenhuma alteração foi aplicada.",
+      "dismiss": "Fechar"
     }
   },
   "settings": {
@@ -894,7 +980,10 @@
       "resumes": "Currículos",
       "jobs": "Vagas",
       "improvements": "Melhorias",
-      "masterResume": "Currículo Principal"
+      "masterResume": "Currículo Principal",
+      "sessionCost": "Custo da sessão",
+      "sessionCalls": "{count} chamadas nesta sessão",
+      "sessionReset": "Redefinir"
     },
     "statusValues": {
       "healthy": "Conectado",
@@ -987,7 +1076,11 @@
       },
       "healthWarnings": {
         "empty_content": "O LLM retornou conteúdo vazio na verificação de integridade."
-      }
+      },
+      "openRouterSelectModel": "Selecione um modelo",
+      "openRouterPrice": "{in} entrada / {out} saída por 1M tokens",
+      "openRouterLoading": "Carregando modelos…",
+      "openRouterError": "Não foi possível carregar os modelos — digite o nome do modelo manualmente."
     },
     "chatgpt": {
       "continue": "Continuar com o ChatGPT",
@@ -1028,6 +1121,10 @@
       "interviewPrep": {
         "label": "Preparação para entrevista",
         "description": "Gerar automaticamente preparação para entrevista junto com currículos adaptados salvos"
+      },
+      "preserveEducation": {
+        "label": "Preservar educação",
+        "description": "Manter as entradas de educação inalteradas durante a personalização. Você ainda pode editá-las manualmente no editor de currículo."
       }
     },
     "promptSettings": {
@@ -1092,7 +1189,8 @@
     "setDefaultSuccess": "Este currículo principal agora é o padrão para personalização.",
     "setDefaultError": "Não foi possível definir este currículo como principal padrão. Tente novamente.",
     "duplicate": "Duplicar",
-    "duplicateError": "Não foi possível duplicar este currículo. Tente novamente."
+    "duplicateError": "Não foi possível duplicar este currículo. Tente novamente.",
+    "viewCoverLetter": "Ver carta de apresentação"
   },
   "preview": {
     "margins": "Margens",
@@ -1121,9 +1219,9 @@
       "earlierExperience": "Experiência anterior",
       "education": "Formação",
       "projects": "Projetos",
-      "skills": "Habilidades e Prêmios",
+      "skills": "Habilidades",
       "certifications": "Treinamentos e Certificações",
-      "skillsOnly": "Habilidades",
+      "skillsOnly": "Habilidades Técnicas",
       "languages": "Idiomas",
       "awards": "Prêmios",
       "links": "Links"
@@ -1132,7 +1230,10 @@
       "name": "Seu Nome"
     },
     "additional": {
-      "technicalSkills": "Habilidades Técnicas"
+      "technicalSkills": "Habilidades Técnicas",
+      "languages": "Idiomas",
+      "certifications": "Certificações e Treinamentos",
+      "awards": "Prêmios"
     },
     "additionalLabels": {
       "technicalSkills": "Habilidades Técnicas:",
@@ -1151,6 +1252,16 @@
       "placeholder": "Sua carta de apresentação aparecerá aqui após personalizar seu currículo com a geração de carta habilitada...",
       "tip": "DICA: Uma boa carta de apresentação tem tipicamente 300-400 palavras. Edite conforme necessário para personalizar."
     },
+    "signature": {
+      "label": "Assinatura",
+      "placeholder": "Atenciosamente,\n\n{name}",
+      "tip": "DICA: Use {name} como marcador de posição. Edite para personalizar.",
+      "save": "Salvar assinatura",
+      "saving": "Salvando assinatura",
+      "saveForThisLetter": "Salvar para esta carta",
+      "setDefault": "Definir como padrão",
+      "defaultHint": "\"Definir como padrão\" aplica esta assinatura a todas as cartas, a menos que você salve uma diferente para uma carta específica."
+    },
     "preview": {
       "defaultName": "Seu Nome",
       "emptyTitle": "Nenhum conteúdo de carta ainda.",
@@ -1158,6 +1269,62 @@
     },
     "print": {
       "emptyContent": "Nenhum conteúdo de carta de apresentação disponível."
+    },
+    "wizard": {
+      "title": "Personalize sua carta de apresentação",
+      "subtitle": "Responda a estas perguntas para gerar uma carta de apresentação personalizada de 300 a 400 palavras.",
+      "questions": {
+        "companyConnection": {
+          "label": "Conexão com a empresa",
+          "question": "Por que esta empresa? Há algum projeto, produto, valor ou notícia recente que motivou sua candidatura?",
+          "placeholder": "ex.: Acompanho o trabalho de vocês em X desde..."
+        },
+        "heroAchievement": {
+          "label": "Principal conquista",
+          "question": "Quais 1-2 conquistas do seu currículo mais se encaixam nesta vaga? Qual é a história por trás delas?",
+          "placeholder": "ex.: Liderei a migração de..."
+        },
+        "missingLink": {
+          "label": "Preencher a lacuna",
+          "question": "Há alguma habilidade ou ferramenta na descrição da vaga que não se destaca no seu currículo, mas que você domina?",
+          "placeholder": "ex.: Usei X em projetos paralelos, mas não está no meu currículo..."
+        },
+        "careerNarrative": {
+          "label": "Trajetória profissional",
+          "question": "Há algum contexto para esta mudança: transição de carreira, promoção, mudança de setor? Qual é a sua motivação?",
+          "placeholder": "ex.: Depois de 3 anos em X, estou migrando para Y porque..."
+        },
+        "formatting": {
+          "label": "Formatação",
+          "fontLabel": "Fonte",
+          "fontSizeLabel": "Tamanho da fonte",
+          "fonts": ["Georgia", "Arial", "Calibri", "Times New Roman", "Garamond"],
+          "fontSizes": ["10.5pt", "11pt", "11.5pt", "12pt"]
+        },
+        "referenceLine": {
+          "label": "Linha de referência",
+          "jobTitleLabel": "Título exato da vaga",
+          "jobTitlePlaceholder": "ex.: Engenheiro de Software Sênior",
+          "companyNameLabel": "Nome da empresa",
+          "companyNamePlaceholder": "ex.: Stripe"
+        }
+      },
+      "actions": {
+        "generate": "Gerar carta de apresentação",
+        "generating": "Gerando...",
+        "regenerate": "Gerar novamente",
+        "regenerating": "Gerando novamente...",
+        "editAnswers": "Editar respostas"
+      },
+      "feedback": {
+        "title": "Sugestões de melhoria",
+        "placeholder": "ex.: Deixe o parágrafo 2 mais técnico, mude a fonte para Garamond 11pt",
+        "submit": "Gerar novamente com feedback",
+        "submitting": "Gerando novamente..."
+      },
+      "errors": {
+        "generateFailed": "Falha ao gerar a carta de apresentação: {error}"
+      }
     }
   },
   "outreach": {
@@ -1444,5 +1611,32 @@
       "deleteInProgress": "Esta vaga está sendo personalizada. Remova-a quando terminar.",
       "clearFailed": "Não foi possível limpar a fila. Tente novamente."
     }
+  },
+  "usage": {
+    "title": "Uso e custos",
+    "subtitle": "Gastos por modelo, avaliações e tempos de resposta",
+    "loadError": "Não foi possível carregar as estatísticas de uso.",
+    "sessionTitle": "Sessão atual",
+    "sessionCost": "Custo da sessão",
+    "sessionCalls": "{count} chamadas nesta sessão",
+    "reset": "Redefinir sessão",
+    "modelsTitle": "Por modelo",
+    "emptyTitle": "Ainda sem uso",
+    "emptyDescription": "Execute uma adaptação ou outra ação de IA e as estatísticas por modelo aparecerão aqui.",
+    "table": {
+      "model": "Modelo",
+      "queries": "Consultas",
+      "totalCost": "Custo total",
+      "avgCost": "Custo / consulta",
+      "avgLatency": "Resposta méd.",
+      "rating": "Avaliação"
+    }
+  },
+  "coverLetterViewer": {
+    "loading": "Carregando carta de apresentação...",
+    "notFound": "Nenhuma carta de apresentação encontrada para este currículo.",
+    "backToResume": "Voltar ao currículo",
+    "download": "Baixar carta de apresentação",
+    "failedToLoad": "Falha ao carregar a carta de apresentação."
   }
 }

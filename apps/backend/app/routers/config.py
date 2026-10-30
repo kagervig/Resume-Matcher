@@ -40,6 +40,8 @@ from app.schemas import (
     ApiKeyStatusResponse,
     ApiKeysUpdateRequest,
     ApiKeysUpdateResponse,
+    CoverLetterSignatureConfigRequest,
+    CoverLetterSignatureConfigResponse,
     FeatureConfigRequest,
     FeatureConfigResponse,
     FeaturePromptsRequest,
@@ -53,6 +55,8 @@ from app.schemas import (
     PromptOption,
     ResetDatabaseRequest,
 )
+from app.schemas.usage import OpenRouterModel, OpenRouterModelsResponse
+from app.services.openrouter import fetch_openrouter_models
 
 # Providers that cannot function without an explicit endpoint. Mirrors
 # `requiresBaseUrl` in apps/frontend/lib/api/config.ts (M-05) — the UI guard
@@ -351,6 +355,7 @@ async def get_feature_config() -> FeatureConfigResponse:
         enable_cover_letter=stored.get("enable_cover_letter", False),
         enable_outreach_message=stored.get("enable_outreach_message", False),
         enable_interview_prep=stored.get("enable_interview_prep", False),
+        preserve_education=stored.get("preserve_education", True),
     )
 
 
@@ -366,6 +371,8 @@ async def update_feature_config(request: FeatureConfigRequest) -> FeatureConfigR
         stored["enable_outreach_message"] = request.enable_outreach_message
     if request.enable_interview_prep is not None:
         stored["enable_interview_prep"] = request.enable_interview_prep
+    if request.preserve_education is not None:
+        stored["preserve_education"] = request.preserve_education
 
     # Save config
     _save_config(stored)
@@ -374,7 +381,32 @@ async def update_feature_config(request: FeatureConfigRequest) -> FeatureConfigR
         enable_cover_letter=stored.get("enable_cover_letter", False),
         enable_outreach_message=stored.get("enable_outreach_message", False),
         enable_interview_prep=stored.get("enable_interview_prep", False),
+        preserve_education=stored.get("preserve_education", True),
     )
+
+
+@router.get(
+    "/cover-letter-signature", response_model=CoverLetterSignatureConfigResponse
+)
+async def get_cover_letter_signature_config() -> CoverLetterSignatureConfigResponse:
+    """Get the global default cover letter signature."""
+    stored = _load_config()
+    return CoverLetterSignatureConfigResponse(
+        signature=stored.get("default_cover_letter_signature", "")
+    )
+
+
+@router.put(
+    "/cover-letter-signature", response_model=CoverLetterSignatureConfigResponse
+)
+async def update_cover_letter_signature_config(
+    request: CoverLetterSignatureConfigRequest,
+) -> CoverLetterSignatureConfigResponse:
+    """Set the global default cover letter signature used by all cover letters."""
+    stored = _load_config()
+    stored["default_cover_letter_signature"] = request.signature
+    _save_config(stored)
+    return CoverLetterSignatureConfigResponse(signature=request.signature)
 
 
 # Supported languages for i18n
@@ -760,3 +792,19 @@ async def reset_database_endpoint(request: ResetDatabaseRequest) -> dict:
         )
     await db.reset_database()
     return {"message": "Database and all data have been reset successfully"}
+
+
+@router.get("/openrouter-models", response_model=OpenRouterModelsResponse)
+async def get_openrouter_models() -> OpenRouterModelsResponse:
+    """List available OpenRouter models for the model picker (cached ~1h)."""
+    try:
+        models = await fetch_openrouter_models()
+    except Exception as e:
+        logger.error(f"Failed to fetch OpenRouter models: {e}")
+        raise HTTPException(
+            status_code=502,
+            detail="Could not fetch OpenRouter models. Please try again.",
+        )
+    return OpenRouterModelsResponse(
+        models=[OpenRouterModel(**model) for model in models]
+    )

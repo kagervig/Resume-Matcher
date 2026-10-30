@@ -22,6 +22,8 @@ export interface CoverLetterPreviewProps {
   content: string;
   /** Personal info for header */
   personalInfo: CoverLetterPersonalInfo;
+  /** Signature text shown at the bottom of the letter */
+  signature?: string;
   /** Page size for styling */
   pageSize?: 'A4' | 'LETTER';
   /** Additional class names */
@@ -31,6 +33,7 @@ export interface CoverLetterPreviewProps {
 export function CoverLetterPreview({
   content,
   personalInfo,
+  signature,
   pageSize = 'A4',
   className,
 }: CoverLetterPreviewProps) {
@@ -61,7 +64,7 @@ export function CoverLetterPreview({
           <h1 className="font-serif text-2xl font-bold tracking-tight">
             {personalInfo.name || t('coverLetter.preview.defaultName')}
           </h1>
-          <div className="mt-2 font-mono text-xs text-ink-soft flex flex-wrap gap-x-4 gap-y-1">
+          <div className="mt-2 font-serif text-xs text-ink-soft flex flex-wrap gap-x-4 gap-y-1">
             {personalInfo.email && <span>{personalInfo.email}</span>}
             {personalInfo.phone && <span>{personalInfo.phone}</span>}
             {personalInfo.location && <span>{personalInfo.location}</span>}
@@ -71,7 +74,7 @@ export function CoverLetterPreview({
 
         {/* Date */}
         <div className="mb-8">
-          <p className="font-mono text-sm text-ink-soft">{today}</p>
+          <p className="font-serif text-sm text-ink-soft">{today}</p>
         </div>
 
         {/* Body */}
@@ -89,6 +92,15 @@ export function CoverLetterPreview({
             />
           )}
         </div>
+
+        {/* Signature */}
+        {signature && (
+          <div className="mt-8">
+            <p className="font-serif text-base leading-relaxed text-ink-soft whitespace-pre-line">
+              {signature}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

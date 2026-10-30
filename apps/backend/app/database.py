@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
 
-from sqlalchemy import and_, delete, func, or_, select, text, update
+from sqlalchemy import and_, case, delete, func, or_, select, text, update
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Session, sessionmaker
@@ -39,6 +39,7 @@ from app.models import (
     Application,
     Improvement,
     Job,
+    LLMCall,
     QueueItem,
     Resume,
     TailoringPreview,
@@ -254,6 +255,7 @@ class Database:
             "processed_data": row.processed_data,
             "processing_status": row.processing_status,
             "cover_letter": row.cover_letter,
+            "cover_letter_context": row.cover_letter_context,
             "outreach_message": row.outreach_message,
             "interview_prep": row.interview_prep,
             "title": row.title,
@@ -672,16 +674,20 @@ class Database:
         return self._job_to_dict(row)
 
     async def create_jobs(
-        self, contents: list[str], resume_id: str | None = None
+        self,
+        contents: list[str],
+        resume_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """Persist a validated job-description batch atomically, in input order."""
+        base_meta = copy.deepcopy(metadata) if metadata else {}
         rows = [
             Job(
                 job_id=str(uuid4()),
                 content=content,
                 resume_id=resume_id,
                 created_at=_now(),
-                metadata_json={},
+                metadata_json=copy.deepcopy(base_meta),
             )
             for content in contents
         ]
@@ -1240,6 +1246,52 @@ class Database:
             row = await session.get(Application, application_id)
             return self._application_to_dict(row) if row else None
 
+    async def get_application_by_resume(
+        self, resume_id: str
+    ) -> dict[str, Any] | None:
+        """Get the tracker card for an applied/tailored resume, if any."""
+        async with self._session() as session:
+            result = await session.execute(
+                select(Application).where(Application.resume_id == resume_id)
+            )
+            row = result.scalars().first()
+            return self._application_to_dict(row) if row else None
+
+    async def apply_resume(self, resume_id: str) -> dict[str, Any] | None:
+        """Create-or-promote a tracker card to "applied" for a tailored resume.
+
+        Resolves the tailored resume's job (and company/role) through its
+        improvement record. Returns ``None`` when no improvement links the
+        resume to a job (the caller raises 404). An existing card is promoted
+        to ``applied`` (``update_application`` sets ``applied_at`` on the
+        saved→applied transition); otherwise a new ``applied`` card is created.
+        """
+        improvement = await self.get_improvement_by_tailored_resume(resume_id)
+        if improvement is None:
+            return None
+
+        job_id = improvement["job_id"]
+        master_resume_id = improvement["original_resume_id"]
+
+        job = await self.get_job(job_id)
+        company = job.get("company") if job else None
+        role = job.get("role") if job else None
+
+        existing = await self.get_application_by_resume(resume_id)
+        if existing is not None:
+            return await self.update_application(
+                existing["application_id"], {"status": "applied"}
+            )
+
+        return await self.create_application(
+            job_id=job_id,
+            resume_id=resume_id,
+            master_resume_id=master_resume_id,
+            status="applied",
+            company=company,
+            role=role,
+        )
+
     async def update_application(
         self, application_id: str, updates: dict[str, Any]
     ) -> dict[str, Any] | None:
@@ -1410,6 +1462,93 @@ class Database:
                         ApiKey(provider=provider, ciphertext=ciphertext, updated_at=now)
                     )
             session.commit()
+
+    # -- LLM usage tracking -------------------------------------------------
+
+    def record_llm_call(
+        self,
+        *,
+        id: str,
+        provider: str,
+        model: str,
+        feature: str | None,
+        request_id: str | None,
+        prompt_tokens: int,
+        completion_tokens: int,
+        total_tokens: int,
+        cost_usd: float | None,
+        latency_ms: int,
+    ) -> None:
+        """Insert one LLM-call record (sync, on the LLM hot path)."""
+        with self._sync_write_session() as session:
+            session.add(
+                LLMCall(
+                    id=id,
+                    provider=provider,
+                    model=model,
+                    feature=feature,
+                    request_id=request_id,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    total_tokens=total_tokens,
+                    cost_usd=cost_usd,
+                    latency_ms=latency_ms,
+                    created_at=_now(),
+                )
+            )
+            session.commit()
+
+    async def set_llm_call_rating(self, request_id: str, rating: str) -> int:
+        """Set ``rating`` on every call for ``request_id``; return the row count."""
+        async with self._write_session() as session:
+            result = await session.execute(
+                update(LLMCall)
+                .where(LLMCall.request_id == request_id)
+                .values(rating=rating)
+            )
+            await session.commit()
+            return int(result.rowcount or 0)
+
+    async def get_model_stats(self) -> list[dict[str, Any]]:
+        """Aggregate per (provider, model): counts, cost, latency, ratings."""
+        async with self._session() as session:
+            rows = (
+                await session.execute(
+                    select(
+                        LLMCall.provider,
+                        LLMCall.model,
+                        func.count().label("count"),
+                        func.sum(LLMCall.cost_usd).label("total_cost"),
+                        func.avg(LLMCall.cost_usd).label("avg_cost"),
+                        func.avg(LLMCall.latency_ms).label("avg_latency"),
+                        func.sum(case((LLMCall.rating == "good", 1), else_=0)).label(
+                            "good_count"
+                        ),
+                        func.sum(case((LLMCall.rating == "bad", 1), else_=0)).label(
+                            "bad_count"
+                        ),
+                    )
+                    .group_by(LLMCall.provider, LLMCall.model)
+                    .order_by(func.count().desc())
+                )
+            ).all()
+            return [
+                {
+                    "provider": row.provider,
+                    "model": row.model,
+                    "count": int(row.count or 0),
+                    "total_cost_usd": (
+                        float(row.total_cost) if row.total_cost is not None else None
+                    ),
+                    "avg_cost_usd": (
+                        float(row.avg_cost) if row.avg_cost is not None else None
+                    ),
+                    "avg_latency_ms": int(row.avg_latency or 0),
+                    "good_count": int(row.good_count or 0),
+                    "bad_count": int(row.bad_count or 0),
+                }
+                for row in rows
+            ]
 
     # -- Stats / maintenance ------------------------------------------------
 

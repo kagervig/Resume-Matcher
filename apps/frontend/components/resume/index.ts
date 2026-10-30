@@ -8,3 +8,4 @@ export { ResumeVivid } from './resume-vivid';
 export { ResumeVividSingle } from './resume-vivid-single';
 export { ResumeModernDeedy } from './resume-modern-deedy';
 export { ResumeDeedy } from './resume-deedy';
+export { PersonalInfoHeader } from './personal-info-header';

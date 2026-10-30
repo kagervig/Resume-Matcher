@@ -30,6 +30,7 @@ export const EducationForm: React.FC<EducationFormProps> = ({ data, onChange }) 
         institution: '',
         degree: '',
         years: '',
+        grade: '',
         description: '',
       },
     ]);
@@ -128,6 +129,17 @@ export const EducationForm: React.FC<EducationFormProps> = ({ data, onChange }) 
                     value={item.years || ''}
                     onChange={(e) => handleChange(item.id, 'years', e.target.value)}
                     placeholder={t('builder.forms.education.placeholders.years')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`${fieldId}-${item.id}-grade`}>
+                    {t('builder.forms.education.fields.grade')}
+                  </Label>
+                  <Input
+                    id={`${fieldId}-${item.id}-grade`}
+                    value={item.grade || ''}
+                    onChange={(e) => handleChange(item.id, 'grade', e.target.value)}
+                    placeholder={t('builder.forms.education.placeholders.grade')}
                   />
                 </div>
               </div>

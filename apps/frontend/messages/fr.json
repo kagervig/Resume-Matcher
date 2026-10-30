@@ -32,7 +32,8 @@
     "keysCleared": "Clés API supprimées avec succès",
     "databaseReset": "Base de données réinitialisée avec succès",
     "popupBlocked": "Fenêtre contextuelle bloquée. Veuillez autoriser les fenêtres contextuelles ou ouvrir cette URL manuellement : {url}",
-    "resumeDeleted": "Ce CV a été supprimé. Importez ou sélectionnez un autre CV."
+    "resumeDeleted": "Ce CV a été supprimé. Importez ou sélectionnez un autre CV.",
+    "noResults": "Aucun résultat"
   },
   "home": {
     "brandLine1": "Resume",
@@ -61,7 +62,9 @@
     "backToDashboard": "Retour au tableau de bord",
     "goToSettings": "Accéder aux paramètres",
     "applicationTracker": "Suivi des candidatures",
-    "queue": "File d'adaptation"
+    "queue": "File d'adaptation",
+    "usage": "Utilisation",
+    "allResumes": "Tous les CV"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -127,7 +130,20 @@
     "setDefault": "Définir par défaut",
     "duplicate": "Dupliquer",
     "addMasterTrack": "Ajouter un parcours principal",
-    "masterLimitReached": "Jusqu'à {max} CV principaux"
+    "masterLimitReached": "Jusqu'à {max} CV principaux",
+    "missionControl": "Centre de Contrôle",
+    "pendingApplications": "Candidatures en Attente",
+    "pendingCount": "{count} en attente",
+    "appliedCount": "{count} envoyées",
+    "iApplied": "J'ai Postulé",
+    "iApplying": "Marquage...",
+    "iAppliedError": "Impossible de marquer comme postulé. Veuillez réessayer.",
+    "viewAllResumes": "Tous les CV",
+    "generateNew": "Générer un Nouveau CV",
+    "sessionCost": "Coût de Session",
+    "sessionCalls": "{count} appels",
+    "pending": "En attente",
+    "applied": "Postulé"
   },
   "builder": {
     "panels": {
@@ -188,7 +204,8 @@
         "languages": "Français\nAnglais",
         "certifications": "AWS Solution Architect\nGoogle Analytics",
         "awards": "Employé du mois\nVainqueur de hackathon"
-      }
+      },
+      "toggleDescription": "Afficher dans le CV"
     },
     "customSections": {
       "dialogTitle": "Ajouter une section personnalisée",
@@ -309,6 +326,18 @@
       }
     },
     "jdMatch": {
+      "summary": {
+        "title": "Résumé de l’offre",
+        "description": "Un résumé par IA de cette offre d’emploi : l’essentiel, les compétences clés et les mots-clés.",
+        "generate": "Résumer l’offre",
+        "regenerate": "Régénérer",
+        "generating": "Résumé en cours…",
+        "competenciesHeading": "Compétences clés",
+        "keywordsHeading": "Mots-clés essentiels",
+        "generateFailed": "Impossible de générer le résumé. Veuillez réessayer.",
+        "loadFailed": "Impossible de charger le résumé.",
+        "empty": "Pas encore de résumé. Générez-en un pour digérer cette offre."
+      },
       "yourResume": "Votre CV",
       "matchingKeywordsHighlighted": "(mots-clés correspondants surlignés)",
       "jobDescriptionTitle": "Fiche de poste",
@@ -398,6 +427,7 @@
         "fields": {
           "institution": "Établissement",
           "degree": "Diplôme",
+          "grade": "Note / GPA",
           "description": "Description",
           "descriptionOptional": "Description (optionnelle)"
         },
@@ -405,6 +435,7 @@
           "institution": "Nom de l'université",
           "degree": "Licence en sciences",
           "years": "Août 2016 - Mai 2020",
+          "grade": "3.9 / 4.0",
           "description": "Informations complémentaires..."
         }
       },
@@ -513,7 +544,35 @@
       "effectiveHeaderFont": "Police des en-têtes",
       "effectiveBodyFont": "Police du corps",
       "compactHint": "Le mode compact resserre l'espacement et l'interligne. Les marges et la taille de police de base restent littérales.",
-      "resetDefaults": "Rétablir les valeurs par défaut"
+      "resetDefaults": "Rétablir les valeurs par défaut",
+      "personalInfo": {
+        "title": "Informations personnelles",
+        "nameStyle": "Style du nom",
+        "layout": "Disposition des contacts",
+        "fields": "Champs à inclure",
+        "nameStyles": {
+          "large": "Grand",
+          "centered": "Centré",
+          "match": "Assorti"
+        },
+        "layouts": {
+          "two-line-center": "Centre",
+          "two-line-2col": "2 col",
+          "two-line-3col": "3 col",
+          "one-line": "1 ligne",
+          "two-line-left": "Gauche",
+          "two-line-right": "Droite"
+        },
+        "fieldLabels": {
+          "title": "Titre",
+          "email": "E-mail",
+          "phone": "Téléphone",
+          "location": "Lieu",
+          "website": "Site web",
+          "linkedin": "LinkedIn",
+          "github": "GitHub"
+        }
+      }
     },
     "personalInfoForm": {
       "placeholders": {
@@ -547,13 +606,17 @@
       "downloadNotAvailable": "Le téléchargement n'est disponible que pour les CV enregistrés.",
       "downloadFailed": "Impossible de télécharger le CV. Veuillez réessayer.",
       "coverLetterSaveFailed": "Impossible d'enregistrer la lettre de motivation. Veuillez réessayer.",
+      "coverLetterSignatureSaveSuccess": "Signature enregistrée",
+      "coverLetterSignatureSaveFailed": "Impossible d'enregistrer la signature. Veuillez réessayer.",
       "coverLetterDownloadRequiresResume": "Enregistrez d'abord le CV pour télécharger la lettre de motivation.",
       "coverLetterMissing": "Aucune lettre de motivation disponible. Activez la génération de lettre de motivation dans les paramètres et personnalisez un CV.",
       "coverLetterDownloadFailed": "Impossible de télécharger la lettre de motivation : {error}",
       "outreachSaveFailed": "Impossible d'enregistrer le message de contact. Veuillez réessayer.",
       "coverLetterGenerateFailed": "Impossible de générer la lettre de motivation : {error}",
       "outreachGenerateFailed": "Impossible de générer le message de contact : {error}",
-      "interviewPrepGenerateFailed": "Impossible de générer la préparation à l'entretien : {error}"
+      "interviewPrepGenerateFailed": "Impossible de générer la préparation à l'entretien : {error}",
+      "coverLetterSignatureDefaultSaveSuccess": "Enregistrée comme signature par défaut pour toutes les lettres de motivation.",
+      "coverLetterSignatureDefaultSaveFailed": "Échec de la définition de la signature par défaut. Veuillez réessayer."
     },
     "leaveWithoutDraft": {
       "title": "Quitter avec des modifications non enregistrées ?",
@@ -804,7 +867,13 @@
       "languageChanges": "Modifications des langues",
       "awardChanges": "Modifications des récompenses",
       "rejectButton": "Rejeter et régénérer",
-      "confirmButton": "Confirmer et enregistrer"
+      "confirmButton": "Confirmer et enregistrer",
+      "totalChanges": "Total des modifications",
+      "awardsAdded": "Récompenses ajoutées",
+      "languagesAdded": "Langues ajoutées",
+      "noChangesTitle": "Aucune modification appliquée",
+      "noChangesMessage": "Le CV adapté est identique à l'original. Consultez les avertissements ci-dessous.",
+      "warningsList": "Avertissements"
     },
     "atsScore": {
       "title": "Détail du score ATS",
@@ -840,6 +909,10 @@
     },
     "selectResumeDescription": "Les puces sont tirées de ce CV principal.",
     "tailoringLabel": "CV à personnaliser :",
+    "company": "Entreprise",
+    "companyPlaceholder": "Acme Corp",
+    "role": "Intitulé du poste",
+    "rolePlaceholder": "Ingénieur logiciel senior",
     "jobDescriptionHint": "Collez la fiche de poste complète, avec les missions et les exigences (50 caractères minimum).",
     "steps": {
       "label": "Étapes de la personnalisation",
@@ -856,6 +929,19 @@
       "unavailable": "Ajustement à la page indisponible",
       "finalOver": "Pourrait dépasser la limite de pages après réécriture",
       "notRechecked": "Respect de la limite de pages non revérifié après la réécriture"
+    },
+    "rating": {
+      "prompt": "Évaluez ce résultat :",
+      "thanks": "Merci pour votre retour !",
+      "good": "Bien",
+      "bad": "À améliorer",
+      "error": "Impossible d'enregistrer l'évaluation."
+    },
+    "applied": {
+      "bannerTitle": "CV adapté",
+      "bannerDescription": "{count} modification(s) appliquée(s).",
+      "bannerNone": "Aucune modification appliquée.",
+      "dismiss": "Fermer"
     }
   },
   "settings": {
@@ -894,7 +980,10 @@
       "resumes": "CV",
       "jobs": "Postes",
       "improvements": "Améliorations",
-      "masterResume": "CV principal"
+      "masterResume": "CV principal",
+      "sessionCost": "Coût de session",
+      "sessionCalls": "{count} appels cette session",
+      "sessionReset": "Réinitialiser"
     },
     "statusValues": {
       "healthy": "Opérationnel",
@@ -987,7 +1076,11 @@
       },
       "healthWarnings": {
         "empty_content": "Le LLM a retourné un contenu vide lors de la vérification de l'état."
-      }
+      },
+      "openRouterSelectModel": "Sélectionner un modèle",
+      "openRouterPrice": "{in} entrée / {out} sortie par 1M jetons",
+      "openRouterLoading": "Chargement des modèles…",
+      "openRouterError": "Impossible de charger les modèles — saisissez le nom du modèle manuellement."
     },
     "chatgpt": {
       "continue": "Continuer avec ChatGPT",
@@ -1028,6 +1121,10 @@
       "interviewPrep": {
         "label": "Préparation à l'entretien",
         "description": "Générez automatiquement une préparation à l'entretien en même temps que les CV personnalisés enregistrés"
+      },
+      "preserveEducation": {
+        "label": "Conserver la formation",
+        "description": "Conserver les entrées de formation inchangées lors de la personnalisation. Vous pouvez toujours les modifier manuellement dans l'éditeur de CV."
       }
     },
     "promptSettings": {
@@ -1092,7 +1189,8 @@
     "setDefaultSuccess": "Ce CV principal est désormais celui utilisé par défaut pour la personnalisation.",
     "setDefaultError": "Impossible de définir ce CV comme CV principal par défaut. Veuillez réessayer.",
     "duplicate": "Dupliquer",
-    "duplicateError": "Impossible de dupliquer ce CV. Veuillez réessayer."
+    "duplicateError": "Impossible de dupliquer ce CV. Veuillez réessayer.",
+    "viewCoverLetter": "Voir la lettre de motivation"
   },
   "preview": {
     "margins": "Marges",
@@ -1121,8 +1219,8 @@
       "earlierExperience": "Expérience antérieure",
       "education": "Formation",
       "projects": "Projets",
-      "skills": "Compétences et récompenses",
-      "skillsOnly": "Compétences",
+      "skills": "Compétences",
+      "skillsOnly": "Compétences techniques",
       "certifications": "Formation et certifications",
       "languages": "Langues",
       "awards": "Récompenses",
@@ -1132,7 +1230,10 @@
       "name": "Votre nom"
     },
     "additional": {
-      "technicalSkills": "Compétences techniques"
+      "technicalSkills": "Compétences techniques",
+      "languages": "Langues",
+      "certifications": "Certifications et Formation",
+      "awards": "Récompenses"
     },
     "additionalLabels": {
       "technicalSkills": "Compétences techniques :",
@@ -1151,6 +1252,16 @@
       "placeholder": "Votre lettre de motivation apparaîtra ici après la personnalisation de votre CV avec la génération de lettre de motivation activée...",
       "tip": "CONSEIL : Une bonne lettre de motivation fait généralement 300 à 400 mots. Modifiez-la selon vos besoins."
     },
+    "signature": {
+      "label": "Signature",
+      "placeholder": "Cordialement,\n\n{name}",
+      "tip": "CONSEIL : Utilisez {name} comme espace réservé. Modifiez pour personnaliser.",
+      "save": "Enregistrer la signature",
+      "saving": "Enregistrement...",
+      "saveForThisLetter": "Enregistrer pour cette lettre",
+      "setDefault": "Définir par défaut",
+      "defaultHint": "« Définir par défaut » applique cette signature à toutes les lettres, sauf si vous en enregistrez une autre pour une lettre spécifique."
+    },
     "preview": {
       "defaultName": "Votre nom",
       "emptyTitle": "Aucun contenu de lettre de motivation pour l'instant.",
@@ -1158,6 +1269,62 @@
     },
     "print": {
       "emptyContent": "Aucun contenu de lettre de motivation disponible."
+    },
+    "wizard": {
+      "title": "Personnalisez votre lettre de motivation",
+      "subtitle": "Répondez à ces questions pour générer une lettre de motivation personnalisée de 300 à 400 mots.",
+      "questions": {
+        "companyConnection": {
+          "label": "Lien avec l'entreprise",
+          "question": "Pourquoi cette entreprise ? Y a-t-il un projet, un produit, une valeur ou une actualité récente qui vous a incité à postuler ?",
+          "placeholder": "p. ex. Je suis votre travail sur X depuis..."
+        },
+        "heroAchievement": {
+          "label": "Réalisation phare",
+          "question": "Quelles 1 à 2 réalisations de votre CV correspondent le mieux à ce poste ? Quelle est leur histoire ?",
+          "placeholder": "p. ex. J'ai dirigé la migration de..."
+        },
+        "missingLink": {
+          "label": "Combler l'écart",
+          "question": "Y a-t-il une compétence ou un outil dans l'offre d'emploi peu visible sur votre CV mais que vous maîtrisez ?",
+          "placeholder": "p. ex. J'ai utilisé X dans des projets personnels mais ce n'est pas sur mon CV..."
+        },
+        "careerNarrative": {
+          "label": "Parcours professionnel",
+          "question": "Y a-t-il un contexte à ce changement : reconversion, promotion, changement de secteur ? Quelle est votre motivation ?",
+          "placeholder": "p. ex. Après 3 ans dans X, je m'oriente vers Y parce que..."
+        },
+        "formatting": {
+          "label": "Mise en forme",
+          "fontLabel": "Police",
+          "fontSizeLabel": "Taille de police",
+          "fonts": ["Georgia", "Arial", "Calibri", "Times New Roman", "Garamond"],
+          "fontSizes": ["10.5pt", "11pt", "11.5pt", "12pt"]
+        },
+        "referenceLine": {
+          "label": "Ligne de référence",
+          "jobTitleLabel": "Intitulé exact du poste",
+          "jobTitlePlaceholder": "p. ex. Ingénieur logiciel senior",
+          "companyNameLabel": "Nom de l'entreprise",
+          "companyNamePlaceholder": "p. ex. Stripe"
+        }
+      },
+      "actions": {
+        "generate": "Générer la lettre de motivation",
+        "generating": "Génération...",
+        "regenerate": "Régénérer",
+        "regenerating": "Régénération...",
+        "editAnswers": "Modifier les réponses"
+      },
+      "feedback": {
+        "title": "Suggestions d'amélioration",
+        "placeholder": "p. ex. Rendez le paragraphe 2 plus technique, changez la police en Garamond 11pt",
+        "submit": "Régénérer avec commentaires",
+        "submitting": "Régénération..."
+      },
+      "errors": {
+        "generateFailed": "Échec de la génération de la lettre de motivation : {error}"
+      }
     }
   },
   "outreach": {
@@ -1444,5 +1611,32 @@
       "deleteInProgress": "Cette offre est en cours d'adaptation. Retirez-la une fois terminée.",
       "clearFailed": "Impossible de vider la file. Veuillez réessayer."
     }
+  },
+  "usage": {
+    "title": "Utilisation et coûts",
+    "subtitle": "Dépenses par modèle, évaluations et temps de réponse",
+    "loadError": "Impossible de charger les statistiques d'utilisation.",
+    "sessionTitle": "Session en cours",
+    "sessionCost": "Coût de session",
+    "sessionCalls": "{count} appels cette session",
+    "reset": "Réinitialiser la session",
+    "modelsTitle": "Par modèle",
+    "emptyTitle": "Aucune utilisation",
+    "emptyDescription": "Lancez une adaptation ou une autre action IA et les statistiques par modèle apparaîtront ici.",
+    "table": {
+      "model": "Modèle",
+      "queries": "Requêtes",
+      "totalCost": "Coût total",
+      "avgCost": "Coût / requête",
+      "avgLatency": "Réponse moy.",
+      "rating": "Évaluation"
+    }
+  },
+  "coverLetterViewer": {
+    "loading": "Chargement de la lettre de motivation...",
+    "notFound": "Aucune lettre de motivation trouvée pour ce CV.",
+    "backToResume": "Retour au CV",
+    "download": "Télécharger la lettre de motivation",
+    "failedToLoad": "Échec du chargement de la lettre de motivation."
   }
 }

@@ -63,7 +63,7 @@ describe('ResumeModernDeedy', () => {
     const { container } = render(<ResumeModernDeedy data={data} />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Sarah Chen');
     expect(text(container)).toContain(
-      'sarah.chen@example.com | +1 415 555 0142 | San Francisco, CA | linkedin.com/in/sarahchen | https://github.com/sarahchen'
+      'sarah.chen@example.com | +1 415 555 0142 | San Francisco, CA | linkedin.com/in/sarahchen | github.com/sarahchen'
     );
     expect(screen.getByRole('link', { name: 'sarah.chen@example.com' })).toHaveAttribute(
       'href',
@@ -74,8 +74,8 @@ describe('ResumeModernDeedy', () => {
       'href',
       'https://www.linkedin.com/in/sarahchen'
     );
-    // A value typed with a scheme is shown exactly as typed.
-    expect(screen.getByRole('link', { name: 'https://github.com/sarahchen' })).toHaveAttribute(
+    // The unified header strips the scheme from the label but keeps it in the link target.
+    expect(screen.getByRole('link', { name: 'github.com/sarahchen' })).toHaveAttribute(
       'href',
       'https://github.com/sarahchen'
     );

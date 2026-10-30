@@ -19,8 +19,13 @@ import { DescriptionList } from './description-list';
 import { SafeHtml } from './safe-html';
 import { EarlierExperience, splitCondensed } from './earlier-experience';
 import { RESUME_SECTION, RESUME_SECTION_TITLE, resumeItem } from './page-break-attrs';
+import { useAdditionalGroups } from './use-additional-groups';
 import baseStyles from './styles/_base.module.css';
 import styles from './styles/deedy.module.css';
+import {
+  DEFAULT_TEMPLATE_SETTINGS,
+  type PersonalInfoSettings,
+} from '@/lib/types/template-settings';
 
 type Column = 'left' | 'right';
 
@@ -133,6 +138,7 @@ const joinPresent = (values: (string | undefined)[]) => values.filter(Boolean).j
 interface ResumeDeedyProps {
   earlierExperienceLabel?: string;
   data: ResumeData;
+  personalInfoSettings?: PersonalInfoSettings;
   sectionHeadings?: Partial<ResumeSectionHeadings>;
   additionalSectionLabels?: Partial<AdditionalSectionLabels>;
   fallbackLabels?: Partial<ResumeFallbackLabels>;
@@ -152,17 +158,22 @@ interface ResumeDeedyProps {
  */
 export const ResumeDeedy: React.FC<ResumeDeedyProps> = ({
   data,
+  personalInfoSettings = DEFAULT_TEMPLATE_SETTINGS.personalInfo,
   sectionHeadings,
   additionalSectionLabels,
   fallbackLabels,
   earlierExperienceLabel,
 }) => {
   const { personalInfo, summary, workExperience, education, personalProjects, additional } = data;
+  const piFields = personalInfoSettings.fields;
 
-  const technicalSkills = clean(additional?.technicalSkills);
-  const languages = clean(additional?.languages);
-  const certificationsTraining = clean(additional?.certificationsTraining);
-  const awardTexts = clean(additional?.awards);
+  // Visibility-aware groups; empty array for a group means hidden or no content.
+  const { groups: additionalGroups } = useAdditionalGroups(additional, additional?.visibility);
+  const additionalGroupMap = Object.fromEntries(additionalGroups.map((g) => [g.key, g.items]));
+  const technicalSkills = additionalGroupMap.technicalSkills ?? [];
+  const languages = additionalGroupMap.languages ?? [];
+  const certificationsTraining = additionalGroupMap.certificationsTraining ?? [];
+  const awardTexts = additionalGroupMap.awards ?? [];
   const awards = awardTexts.map(parseAward);
 
   const headings = {
@@ -188,21 +199,25 @@ export const ResumeDeedy: React.FC<ResumeDeedyProps> = ({
     </a>
   );
 
-  const webLine = [personalInfo?.website, personalInfo?.linkedin, personalInfo?.github].filter(
-    (value): value is string => Boolean(value)
-  );
+  const webLine = [
+    piFields.website ? personalInfo?.website : undefined,
+    piFields.linkedin ? personalInfo?.linkedin : undefined,
+    piFields.github ? personalInfo?.github : undefined,
+  ].filter((value): value is string => Boolean(value));
   const contactLine = [
-    personalInfo?.email && (
+    piFields.email && personalInfo?.email && (
       <a key="email" href={`mailto:${personalInfo.email}`} className={styles.link}>
         {personalInfo.email}
       </a>
     ),
-    personalInfo?.phone && (
+    piFields.phone && personalInfo?.phone && (
       <a key="phone" href={`tel:${personalInfo.phone}`} className={styles.link}>
         {personalInfo.phone}
       </a>
     ),
-    personalInfo?.location && <span key="location">{personalInfo.location}</span>,
+    piFields.location && personalInfo?.location && (
+      <span key="location">{personalInfo.location}</span>
+    ),
   ].filter(Boolean);
 
   const withPipes = (nodes: React.ReactNode[]) =>
@@ -285,6 +300,7 @@ export const ResumeDeedy: React.FC<ResumeDeedyProps> = ({
                 </div>
               )}
               {entryMeta(formatDateRange(edu.years))}
+              {edu.grade && <div className={`${styles.entryMeta} text-right`}>{edu.grade}</div>}
               {edu.description && <p className={styles.text}>{edu.description}</p>}
             </div>
           ))}
@@ -548,7 +564,7 @@ export const ResumeDeedy: React.FC<ResumeDeedyProps> = ({
           )}
           <span className={styles.nameLast}>{nameLast}</span>
         </h1>
-        {personalInfo?.title && (
+        {piFields.title && personalInfo?.title && (
           <div className={styles.title}>
             <SmallCaps text={personalInfo.title} />
           </div>

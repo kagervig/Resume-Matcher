@@ -39,6 +39,17 @@ describe('AdditionalForm newline handling (issue #763)', () => {
 
     expect(onChange.mock.calls[0][0].technicalSkills).toEqual(['React', '', 'TypeScript']);
   });
+
+  it('renders when visibility is null rather than undefined', () => {
+    const onChange = vi.fn<(data: AdditionalInfo) => void>();
+    // Persisted resumes can carry an explicit null visibility, not just undefined.
+    const data = { technicalSkills: ['React'], visibility: null } as unknown as AdditionalInfo;
+
+    render(<AdditionalForm data={data} onChange={onChange} />);
+
+    // The optional-group toggles render instead of crashing on null.languages.
+    expect(screen.getByLabelText('resume.additional.technicalSkills')).toBeTruthy();
+  });
 });
 
 describe('ResumeSingleColumn filters blank entries (issue #763)', () => {

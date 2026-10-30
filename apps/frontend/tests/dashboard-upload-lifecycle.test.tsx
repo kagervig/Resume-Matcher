@@ -25,6 +25,32 @@ vi.mock('@/lib/api/resume', () => ({
   fetchJobDescription: vi.fn(),
   setDefaultMasterResume: vi.fn(),
 }));
+vi.mock('@/lib/api/tracker', () => ({
+  listApplications: vi.fn().mockResolvedValue({
+    columns: {
+      saved: [],
+      applied: [],
+      no_response: [],
+      response: [],
+      interview: [],
+      accepted: [],
+      rejected: [],
+    },
+  }),
+  applyResume: vi.fn(),
+  APPLICATION_STATUS_ORDER: [
+    'saved',
+    'applied',
+    'no_response',
+    'response',
+    'interview',
+    'accepted',
+    'rejected',
+  ],
+}));
+vi.mock('@/lib/api/usage', () => ({
+  fetchSessionUsage: vi.fn().mockResolvedValue({ cost_usd: 0, calls: 0, started_at: '2026-01-01' }),
+}));
 
 /** The list row the server returns for the uploaded resume. */
 const master: ResumeListItem = {

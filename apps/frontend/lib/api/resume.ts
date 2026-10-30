@@ -4,7 +4,7 @@ import type {
   InterviewPrepData,
 } from '@/components/common/resume_previewer_context';
 import type { ResumeData } from '@/components/dashboard/resume-component';
-import { type TemplateSettings } from '@/lib/types/template-settings';
+import { serializePersonalInfoFields, type TemplateSettings } from '@/lib/types/template-settings';
 import { type Locale } from '@/i18n/config';
 import { clearResumeWizardCompletion } from '@/lib/utils/resume-wizard-storage';
 import {
@@ -140,13 +140,35 @@ interface ResumeResponse {
     };
     processed_resume: ProcessedResume | null;
     cover_letter?: string | null;
+    cover_letter_signature?: string | null;
+    cover_letter_context?: CoverLetterContext | null;
     outreach_message?: string | null;
     interview_prep?: InterviewPrepData | null;
     parent_id?: string | null; // For determining if resume is tailored
     title?: string | null;
+    job_company?: string | null;
+    job_role?: string | null;
     is_master?: boolean;
     is_default_master?: boolean;
   };
+}
+
+/** Candidate-provided answers that guide cover letter generation */
+export interface CoverLetterContext {
+  company_connection: string;
+  hero_achievement: string;
+  missing_link: string;
+  career_narrative: string;
+  font_style: string;
+  font_size: string;
+  job_title: string;
+  company_name: string;
+}
+
+/** Request body for the guided cover letter endpoint */
+export interface CoverLetterGenerateRequest {
+  context?: CoverLetterContext;
+  feedback?: string;
 }
 
 /** Response from resume upload endpoint */
@@ -188,6 +210,8 @@ export interface ResumeListItem {
   created_at: string;
   updated_at: string;
   title?: string | null;
+  job_company?: string | null;
+  job_role?: string | null;
   // Optional lightweight snippet of associated job description (populated client-side)
   jobSnippet?: string;
 }
@@ -223,12 +247,16 @@ async function postImprove(
 /** Uploads job descriptions and returns a job_id */
 export async function uploadJobDescriptions(
   descriptions: string[],
-  resumeId: string
+  resumeId: string,
+  options?: { company?: string; role?: string }
 ): Promise<string> {
-  const res = await apiPost('/jobs/upload', {
+  const body: Record<string, unknown> = {
     job_descriptions: descriptions,
     resume_id: resumeId,
-  });
+  };
+  if (options?.company) body.company = options.company.trim();
+  if (options?.role) body.role = options.role.trim();
+  const res = await apiPost('/jobs/upload', body);
   if (!res.ok) throw new Error(`Upload failed with status ${res.status}`);
   const data = await res.json();
   return data.job_id[0];
@@ -332,6 +360,9 @@ export function getResumePdfUrl(
     params.set('compactMode', String(settings.compactMode));
     params.set('showContactIcons', String(settings.showContactIcons));
     params.set('accentColor', settings.accentColor);
+    params.set('piLayout', settings.personalInfo.layout);
+    params.set('piNameStyle', settings.personalInfo.nameStyle);
+    params.set('piFields', serializePersonalInfoFields(settings.personalInfo.fields));
   } else {
     params.set('template', 'swiss-single');
     params.set('pageSize', 'A4');
@@ -373,6 +404,17 @@ export async function updateCoverLetter(resumeId: string, content: string): Prom
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(`Failed to update cover letter (status ${res.status}): ${text}`);
+  }
+}
+
+/** Updates the cover letter signature for a resume */
+export async function updateCoverLetterSignature(resumeId: string, content: string): Promise<void> {
+  const res = await apiPatch(`/resumes/${encodeURIComponent(resumeId)}/cover-letter-signature`, {
+    content,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Failed to update cover letter signature (status ${res.status}): ${text}`);
   }
 }
 
@@ -449,12 +491,19 @@ export async function duplicateResume(resumeId: string): Promise<DuplicateResume
 export function getCoverLetterPdfUrl(
   resumeId: string,
   pageSize: 'A4' | 'LETTER' = 'A4',
-  locale?: Locale
+  locale?: Locale,
+  context?: { font_style?: string; font_size?: string } | null
 ): string {
   const normalizedId = normalizeResumeId(resumeId);
   const params = new URLSearchParams({ pageSize });
   if (locale) {
     params.set('lang', locale);
+  }
+  if (context?.font_style) {
+    params.set('font', context.font_style);
+  }
+  if (context?.font_size) {
+    params.set('fontSize', context.font_size);
   }
   return `${API_BASE}/resumes/${encodeURIComponent(normalizedId)}/cover-letter/pdf?${params.toString()}`;
 }
@@ -462,9 +511,10 @@ export function getCoverLetterPdfUrl(
 export async function downloadCoverLetterPdf(
   resumeId: string,
   pageSize: 'A4' | 'LETTER' = 'A4',
-  locale?: Locale
+  locale?: Locale,
+  context?: { font_style?: string; font_size?: string } | null
 ): Promise<Blob> {
-  const url = getCoverLetterPdfUrl(resumeId, pageSize, locale);
+  const url = getCoverLetterPdfUrl(resumeId, pageSize, locale, context);
   const res = await apiFetch(url);
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -482,6 +532,23 @@ export async function generateCoverLetter(resumeId: string): Promise<string> {
   }
   const data = await res.json();
   return data.content;
+}
+
+/** Generates a guided 300-400 word cover letter with context and optional feedback */
+export async function generateCoverLetterGuided(
+  resumeId: string,
+  request: CoverLetterGenerateRequest
+): Promise<string> {
+  const res = await apiPost(
+    `/resumes/${encodeURIComponent(resumeId)}/cover-letter/generate`,
+    request
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Failed to generate cover letter (status ${res.status}): ${text}`);
+  }
+  const data = await res.json();
+  return data.content as string;
 }
 
 /** Generates an outreach message on-demand for a tailored resume */
@@ -546,6 +613,38 @@ export async function recalculateAtsScore(resumeId: string): Promise<ATSScoreRec
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(`Failed to recalculate ATS score (status ${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
+export interface JDSummary {
+  summary: string;
+  core_competencies: string[];
+  keywords: string[];
+}
+
+export interface JDSummaryRecord {
+  summary: JDSummary;
+  /** UTC ISO-8601 time the summary was generated. */
+  generated_at: string;
+}
+
+/** Cached AI summary of the linked job description, or null when never generated. */
+export async function fetchJdSummary(resumeId: string): Promise<JDSummaryRecord | null> {
+  const res = await apiFetch(`/resumes/${encodeURIComponent(resumeId)}/jd-summary`);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Failed to fetch JD summary (status ${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
+/** Generates (via LLM) and caches the JD summary, then returns it. */
+export async function generateJdSummary(resumeId: string): Promise<JDSummaryRecord> {
+  const res = await apiPost(`/resumes/${encodeURIComponent(resumeId)}/jd-summary`, {});
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Failed to generate JD summary (status ${res.status}): ${text}`);
   }
   return res.json();
 }

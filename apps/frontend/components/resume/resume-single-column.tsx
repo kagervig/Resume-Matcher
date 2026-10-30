@@ -1,10 +1,15 @@
 import React from 'react';
-import { Mail, Phone, MapPin, Globe, Linkedin, Github, ExternalLink } from 'lucide-react';
+import { Github, ExternalLink } from 'lucide-react';
 import type {
   ResumeData,
   SectionMeta,
   AdditionalSectionLabels,
 } from '@/components/dashboard/resume-component';
+import {
+  DEFAULT_TEMPLATE_SETTINGS,
+  type PersonalInfoSettings,
+} from '@/lib/types/template-settings';
+import { PersonalInfoHeader } from './personal-info-header';
 import { getSortedSections } from '@/lib/utils/section-helpers';
 import { formatDateRange } from '@/lib/utils';
 import { DynamicResumeSection } from './dynamic-resume-section';
@@ -12,6 +17,7 @@ import { DescriptionList } from './description-list';
 import { TagList } from './tag-list';
 import { EarlierExperience, splitCondensed } from './earlier-experience';
 import { RESUME_SECTION, RESUME_SECTION_TITLE, resumeItem } from './page-break-attrs';
+import { useAdditionalGroups } from './use-additional-groups';
 import baseStyles from './styles/_base.module.css';
 import styles from './styles/swiss-single.module.css';
 
@@ -19,6 +25,7 @@ interface ResumeSingleColumnProps {
   earlierExperienceLabel?: string;
   data: ResumeData;
   showContactIcons?: boolean;
+  personalInfoSettings?: PersonalInfoSettings;
   additionalSectionLabels?: Partial<AdditionalSectionLabels>;
 }
 
@@ -33,6 +40,7 @@ interface ResumeSingleColumnProps {
 export const ResumeSingleColumn: React.FC<ResumeSingleColumnProps> = ({
   data,
   showContactIcons = false,
+  personalInfoSettings = DEFAULT_TEMPLATE_SETTINGS.personalInfo,
   additionalSectionLabels,
   earlierExperienceLabel,
 }) => {
@@ -40,59 +48,6 @@ export const ResumeSingleColumn: React.FC<ResumeSingleColumnProps> = ({
 
   // Get sorted visible sections
   const sortedSections = getSortedSections(data);
-
-  // Icon mapping for contact types
-  const contactIcons: Record<string, React.ReactNode> = {
-    Email: <Mail size={12} />,
-    Phone: <Phone size={12} />,
-    Location: <MapPin size={12} />,
-    Website: <Globe size={12} />,
-    LinkedIn: <Linkedin size={12} />,
-    GitHub: <Github size={12} />,
-  };
-
-  // Helper function to render contact details
-  const renderContactDetail = (label: string, value?: string, hrefPrefix: string = '') => {
-    if (!value) return null;
-
-    let finalHrefPrefix = hrefPrefix;
-    if (
-      ['Website', 'LinkedIn', 'GitHub'].includes(label) &&
-      !value.startsWith('http') &&
-      !value.startsWith('//')
-    ) {
-      finalHrefPrefix = 'https://';
-    }
-
-    const href = finalHrefPrefix + value;
-    const isLink =
-      finalHrefPrefix.startsWith('http') ||
-      finalHrefPrefix.startsWith('mailto:') ||
-      finalHrefPrefix.startsWith('tel:');
-
-    let displayText = value;
-    if (isLink && (label === 'LinkedIn' || label === 'GitHub' || label === 'Website')) {
-      displayText = value.replace(/^https?:\/\//, '').replace(/^www\./, '');
-    }
-
-    return (
-      <span className="inline-flex items-center gap-1">
-        {showContactIcons && contactIcons[label]}
-        {isLink ? (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${baseStyles['resume-link']} hover:underline`}
-          >
-            {displayText}
-          </a>
-        ) : (
-          <span style={{ color: 'var(--resume-text-primary)' }}>{displayText}</span>
-        )}
-      </span>
-    );
-  };
 
   // Render a section based on its key
   const renderSection = (section: SectionMeta) => {
@@ -255,6 +210,11 @@ export const ResumeSingleColumn: React.FC<ResumeSingleColumnProps> = ({
                     className={`flex justify-between ${baseStyles['resume-item-subtitle']} ${baseStyles['resume-row-tight']}`}
                   >
                     <span>{edu.degree}</span>
+                    {edu.grade && (
+                      <span className={`${baseStyles['resume-date']} ml-4 shrink-0`}>
+                        {edu.grade}
+                      </span>
+                    )}
                   </div>
                   {edu.description && (
                     <p className={baseStyles['resume-text-sm']}>{edu.description}</p>
@@ -287,65 +247,15 @@ export const ResumeSingleColumn: React.FC<ResumeSingleColumnProps> = ({
 
   return (
     <div className={styles.container}>
-      {/* Header Section - Centered Layout (always first) */}
+      {/* Header Section (always first) — layout/fields from personal-info settings */}
       {personalInfo && (
-        <header
-          className={`text-center ${baseStyles['resume-header']} border-b`}
-          style={{ borderColor: 'var(--resume-border-primary)' }}
-        >
-          {/* Name - Centered */}
-          {personalInfo.name && (
-            <h1 className={`${baseStyles['resume-name']} tracking-tight uppercase mb-1`}>
-              {personalInfo.name}
-            </h1>
-          )}
-
-          {/* Title - Centered, below name */}
-          {personalInfo.title && (
-            <h2
-              className={`${baseStyles['resume-title']} ${baseStyles['resume-meta']} tracking-wide uppercase mb-3`}
-            >
-              {personalInfo.title}
-            </h2>
-          )}
-
-          {/* Contact - Own line, centered */}
-          <div
-            className={`flex flex-wrap justify-center gap-x-1 gap-y-1 ${baseStyles['resume-meta']}`}
-          >
-            {renderContactDetail('Email', personalInfo.email, 'mailto:')}
-            {personalInfo.phone && (
-              <>
-                <span className={baseStyles['text-muted']}>,</span>
-                {renderContactDetail('Phone', personalInfo.phone, 'tel:')}
-              </>
-            )}
-            {personalInfo.location && (
-              <>
-                <span className={baseStyles['text-muted']}>,</span>
-                {renderContactDetail('Location', personalInfo.location)}
-              </>
-            )}
-            {personalInfo.website && (
-              <>
-                <span className={baseStyles['text-muted']}>,</span>
-                {renderContactDetail('Website', personalInfo.website)}
-              </>
-            )}
-            {personalInfo.linkedin && (
-              <>
-                <span className={baseStyles['text-muted']}>,</span>
-                {renderContactDetail('LinkedIn', personalInfo.linkedin)}
-              </>
-            )}
-            {personalInfo.github && (
-              <>
-                <span className={baseStyles['text-muted']}>,</span>
-                {renderContactDetail('GitHub', personalInfo.github)}
-              </>
-            )}
-          </div>
-        </header>
+        <PersonalInfoHeader
+          personalInfo={personalInfo}
+          settings={personalInfoSettings}
+          showContactIcons={showContactIcons}
+          nameClassName="tracking-tight uppercase"
+          titleClassName="tracking-wide uppercase"
+        />
       )}
 
       {/* Render sections in order based on sectionMeta */}
@@ -363,30 +273,13 @@ const AdditionalSection: React.FC<{
   additional: ResumeData['additional'];
   displayName?: string;
   labels?: Partial<AdditionalSectionLabels>;
-}> = ({ additional, displayName = 'Skills & Awards', labels }) => {
-  if (!additional) return null;
+}> = ({ additional, displayName = 'Technical Skills', labels }) => {
+  const { groups, showSubLabels, hasContent } = useAdditionalGroups(
+    additional,
+    additional?.visibility
+  );
 
-  const {
-    technicalSkills: rawTechnicalSkills = [],
-    languages: rawLanguages = [],
-    certificationsTraining: rawCertificationsTraining = [],
-    awards: rawAwards = [],
-  } = additional;
-
-  // Drop blank/whitespace-only entries so empty lines (e.g. from editing in the
-  // builder) never render in the resume or PDF (issue #763).
-  const technicalSkills = rawTechnicalSkills.filter(
-    (item): item is string => typeof item === 'string' && item.trim() !== ''
-  );
-  const languages = rawLanguages.filter(
-    (item): item is string => typeof item === 'string' && item.trim() !== ''
-  );
-  const certificationsTraining = rawCertificationsTraining.filter(
-    (item): item is string => typeof item === 'string' && item.trim() !== ''
-  );
-  const awards = rawAwards.filter(
-    (item): item is string => typeof item === 'string' && item.trim() !== ''
-  );
+  if (!hasContent) return null;
 
   const mergedLabels: AdditionalSectionLabels = {
     technicalSkills: labels?.technicalSkills ?? 'Technical Skills:',
@@ -395,13 +288,12 @@ const AdditionalSection: React.FC<{
     awards: labels?.awards ?? 'Awards:',
   };
 
-  const hasContent =
-    technicalSkills.length > 0 ||
-    languages.length > 0 ||
-    certificationsTraining.length > 0 ||
-    awards.length > 0;
-
-  if (!hasContent) return null;
+  const labelsByKey: Record<string, string> = {
+    technicalSkills: mergedLabels.technicalSkills,
+    languages: mergedLabels.languages,
+    certificationsTraining: mergedLabels.certifications,
+    awards: mergedLabels.awards,
+  };
 
   return (
     <div {...RESUME_SECTION} className={baseStyles['resume-section']}>
@@ -409,29 +301,17 @@ const AdditionalSection: React.FC<{
         {displayName}
       </h3>
       <div className={`${baseStyles['resume-stack']} ${baseStyles['resume-text-sm']}`}>
-        {technicalSkills.length > 0 && (
-          <div {...resumeItem()} className="flex items-baseline">
-            <span className="font-bold w-32 shrink-0">{mergedLabels.technicalSkills}</span>
-            <TagList items={technicalSkills} />
-          </div>
-        )}
-        {languages.length > 0 && (
-          <div {...resumeItem()} className="flex items-baseline">
-            <span className="font-bold w-32 shrink-0">{mergedLabels.languages}</span>
-            <TagList items={languages} />
-          </div>
-        )}
-        {certificationsTraining.length > 0 && (
-          <div {...resumeItem()} className="flex items-baseline">
-            <span className="font-bold w-32 shrink-0">{mergedLabels.certifications}</span>
-            <TagList items={certificationsTraining} />
-          </div>
-        )}
-        {awards.length > 0 && (
-          <div {...resumeItem()} className="flex items-baseline">
-            <span className="font-bold w-32 shrink-0">{mergedLabels.awards}</span>
-            <TagList items={awards} />
-          </div>
+        {groups.map((group) =>
+          showSubLabels ? (
+            <div key={group.key} {...resumeItem()} className="flex items-baseline">
+              <span className="font-bold w-32 shrink-0">{labelsByKey[group.key]}</span>
+              <TagList items={group.items} />
+            </div>
+          ) : (
+            <div key={group.key} {...resumeItem()}>
+              <TagList items={group.items} />
+            </div>
+          )
         )}
       </div>
     </div>

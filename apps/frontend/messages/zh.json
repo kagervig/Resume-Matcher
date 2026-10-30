@@ -32,7 +32,8 @@
     "keysCleared": "API密钥已成功清除",
     "databaseReset": "数据库已成功重置",
     "popupBlocked": "弹窗被阻止。请允许弹窗或手动打开此链接：{url}",
-    "resumeDeleted": "此简历已被删除。请上传或选择另一份简历。"
+    "resumeDeleted": "此简历已被删除。请上传或选择另一份简历。",
+    "noResults": "无结果"
   },
   "home": {
     "brandLine1": "简历",
@@ -61,7 +62,9 @@
     "backToDashboard": "返回仪表板",
     "goToSettings": "前往设置",
     "applicationTracker": "申请追踪",
-    "queue": "定制队列"
+    "queue": "定制队列",
+    "usage": "用量",
+    "allResumes": "所有简历"
   },
   "dashboard": {
     "title": "仪表板",
@@ -127,7 +130,20 @@
     "setDefault": "设为默认",
     "duplicate": "复制",
     "addMasterTrack": "添加主简历方向",
-    "masterLimitReached": "最多 {max} 份主简历"
+    "masterLimitReached": "最多 {max} 份主简历",
+    "missionControl": "任务控制台",
+    "pendingApplications": "待处理申请",
+    "pendingCount": "{count} 个待处理",
+    "appliedCount": "{count} 个已申请",
+    "iApplied": "我已申请",
+    "iApplying": "标记中...",
+    "iAppliedError": "无法标记为已申请，请重试。",
+    "viewAllResumes": "所有简历",
+    "generateNew": "生成新简历",
+    "sessionCost": "会话费用",
+    "sessionCalls": "{count} 次调用",
+    "pending": "待处理",
+    "applied": "已申请"
   },
   "builder": {
     "panels": {
@@ -188,7 +204,8 @@
         "languages": "中文\n英语",
         "certifications": "AWS 解决方案架构师\nGoogle Analytics",
         "awards": "月度最佳员工\n黑客松冠军"
-      }
+      },
+      "toggleDescription": "在简历中显示"
     },
     "customSections": {
       "dialogTitle": "添加自定义板块",
@@ -309,6 +326,18 @@
       }
     },
     "jdMatch": {
+      "summary": {
+        "title": "职位摘要",
+        "description": "此职位描述的 AI 摘要——要点、核心能力和关键关键词。",
+        "generate": "总结职位",
+        "regenerate": "重新生成",
+        "generating": "正在总结…",
+        "competenciesHeading": "核心能力",
+        "keywordsHeading": "关键关键词",
+        "generateFailed": "无法生成摘要，请重试。",
+        "loadFailed": "无法加载摘要。",
+        "empty": "尚无摘要。生成一个以便快速了解此职位描述。"
+      },
       "yourResume": "你的简历",
       "matchingKeywordsHighlighted": "（已高亮匹配关键词）",
       "jobDescriptionTitle": "职位描述",
@@ -398,6 +427,7 @@
         "fields": {
           "institution": "学校/机构",
           "degree": "学位/专业",
+          "grade": "成绩 / GPA",
           "description": "描述",
           "descriptionOptional": "描述（可选）"
         },
@@ -405,6 +435,7 @@
           "institution": "某某大学",
           "degree": "工学学士",
           "years": "2016年8月 - 2020年5月",
+          "grade": "3.9 / 4.0",
           "description": "补充说明..."
         }
       },
@@ -513,7 +544,35 @@
       "effectiveHeaderFont": "标题字体",
       "effectiveBodyFont": "正文字体",
       "compactHint": "紧凑模式会收紧间距与行高；页边距与正文字号保持不变。",
-      "resetDefaults": "恢复默认设置"
+      "resetDefaults": "恢复默认设置",
+      "personalInfo": {
+        "title": "个人信息",
+        "nameStyle": "姓名样式",
+        "layout": "联系方式布局",
+        "fields": "包含字段",
+        "nameStyles": {
+          "large": "大号",
+          "centered": "居中",
+          "match": "与联系方式一致"
+        },
+        "layouts": {
+          "two-line-center": "居中",
+          "two-line-2col": "2列",
+          "two-line-3col": "3列",
+          "one-line": "1行",
+          "two-line-left": "左对齐",
+          "two-line-right": "右对齐"
+        },
+        "fieldLabels": {
+          "title": "职位",
+          "email": "邮箱",
+          "phone": "电话",
+          "location": "位置",
+          "website": "网站",
+          "linkedin": "LinkedIn",
+          "github": "GitHub"
+        }
+      }
     },
     "personalInfoForm": {
       "placeholders": {
@@ -547,13 +606,17 @@
       "downloadNotAvailable": "仅已保存的简历可下载。",
       "downloadFailed": "下载简历失败，请重试。",
       "coverLetterSaveFailed": "保存求职信失败，请重试。",
+      "coverLetterSignatureSaveSuccess": "签名已保存",
+      "coverLetterSignatureSaveFailed": "保存签名失败，请重试。",
       "coverLetterDownloadRequiresResume": "请先保存简历再下载求职信。",
       "coverLetterMissing": "暂无求职信内容。请在设置中启用求职信生成并完成一次简历定制。",
       "coverLetterDownloadFailed": "下载求职信失败：{error}",
       "outreachSaveFailed": "保存联系邮件失败，请重试。",
       "coverLetterGenerateFailed": "生成求职信失败：{error}",
       "outreachGenerateFailed": "生成联系邮件失败：{error}",
-      "interviewPrepGenerateFailed": "生成面试准备失败：{error}"
+      "interviewPrepGenerateFailed": "生成面试准备失败：{error}",
+      "coverLetterSignatureDefaultSaveSuccess": "已保存为所有求职信的默认签名。",
+      "coverLetterSignatureDefaultSaveFailed": "设置默认签名失败。请重试。"
     },
     "leaveWithoutDraft": {
       "title": "要带着未保存的更改离开吗？",
@@ -804,7 +867,13 @@
       "languageChanges": "语言变更",
       "awardChanges": "奖项变更",
       "rejectButton": "拒绝并重新生成",
-      "confirmButton": "确认并保存"
+      "confirmButton": "确认并保存",
+      "totalChanges": "总变更数",
+      "awardsAdded": "新增奖项",
+      "languagesAdded": "新增语言",
+      "noChangesTitle": "未应用更改",
+      "noChangesMessage": "定制后的简历与原件相同。请查看下方的警告以了解原因。",
+      "warningsList": "警告"
     },
     "atsScore": {
       "title": "ATS 评分明细",
@@ -840,6 +909,10 @@
     },
     "selectResumeDescription": "要点将从这份主简历中选取。",
     "tailoringLabel": "定制对象：",
+    "company": "公司",
+    "companyPlaceholder": "Acme Corp",
+    "role": "职位名称",
+    "rolePlaceholder": "高级软件工程师",
     "jobDescriptionHint": "请粘贴完整的职位信息，包括岗位职责和任职要求（至少 50 个字符）。",
     "steps": {
       "label": "定制流程",
@@ -856,6 +929,19 @@
       "unavailable": "无法进行页面适配",
       "finalOver": "改写后可能超出页数上限",
       "notRechecked": "改写后未重新检查是否符合页数上限"
+    },
+    "rating": {
+      "prompt": "评价此结果：",
+      "thanks": "感谢您的反馈！",
+      "good": "好",
+      "bad": "需改进",
+      "error": "无法保存评价。"
+    },
+    "applied": {
+      "bannerTitle": "简历已定制",
+      "bannerDescription": "已应用 {count} 处更改。",
+      "bannerNone": "未应用任何更改。",
+      "dismiss": "关闭"
     }
   },
   "settings": {
@@ -894,7 +980,10 @@
       "resumes": "简历",
       "jobs": "职位",
       "improvements": "优化",
-      "masterResume": "主简历"
+      "masterResume": "主简历",
+      "sessionCost": "会话费用",
+      "sessionCalls": "本次会话 {count} 次调用",
+      "sessionReset": "重置"
     },
     "statusValues": {
       "healthy": "健康",
@@ -987,7 +1076,11 @@
       },
       "healthWarnings": {
         "empty_content": "健康检查返回了空内容。"
-      }
+      },
+      "openRouterSelectModel": "选择模型",
+      "openRouterPrice": "每百万 tokens：输入 {in} / 输出 {out}",
+      "openRouterLoading": "正在加载模型…",
+      "openRouterError": "无法加载模型 — 请手动输入模型名称。"
     },
     "chatgpt": {
       "continue": "通过 ChatGPT 继续",
@@ -1028,6 +1121,10 @@
       "interviewPrep": {
         "label": "面试准备",
         "description": "保存定制简历时自动生成面试准备内容"
+      },
+      "preserveEducation": {
+        "label": "保留教育经历",
+        "description": "在定制过程中保持教育经历条目不变。您仍可在简历构建器中手动编辑。"
       }
     },
     "promptSettings": {
@@ -1092,7 +1189,8 @@
     "setDefaultSuccess": "此主简历现已成为定制时的默认主简历。",
     "setDefaultError": "无法将此简历设为默认主简历。请重试。",
     "duplicate": "复制",
-    "duplicateError": "无法复制此简历。请重试。"
+    "duplicateError": "无法复制此简历。请重试。",
+    "viewCoverLetter": "查看求职信"
   },
   "preview": {
     "margins": "页边距",
@@ -1121,8 +1219,8 @@
       "earlierExperience": "早期工作经历",
       "education": "教育背景",
       "projects": "项目经历",
-      "skills": "技能与荣誉",
-      "skillsOnly": "技能",
+      "skills": "技能",
+      "skillsOnly": "技术技能",
       "certifications": "培训与证书",
       "languages": "语言能力",
       "awards": "荣誉奖项",
@@ -1132,7 +1230,10 @@
       "name": "你的姓名"
     },
     "additional": {
-      "technicalSkills": "技术技能"
+      "technicalSkills": "技术技能",
+      "languages": "语言",
+      "certifications": "证书与培训",
+      "awards": "奖项"
     },
     "additionalLabels": {
       "technicalSkills": "技术技能：",
@@ -1151,6 +1252,16 @@
       "placeholder": "启用求职信生成并完成一次简历定制后，求职信内容会显示在这里...",
       "tip": "提示：一封好的求职信通常在 300-400 词左右，可根据需要进行个性化修改。"
     },
+    "signature": {
+      "label": "签名",
+      "placeholder": "此致，\n\n{name}",
+      "tip": "提示：{name} 是占位符，将按原样显示。可编辑以个性化。",
+      "save": "保存签名",
+      "saving": "正在保存...",
+      "saveForThisLetter": "保存到此信",
+      "setDefault": "设为默认",
+      "defaultHint": "“设为默认”会将此签名应用于所有求职信，除非你为某封信保存了不同的签名。"
+    },
     "preview": {
       "defaultName": "你的姓名",
       "emptyTitle": "还没有求职信内容。",
@@ -1158,6 +1269,62 @@
     },
     "print": {
       "emptyContent": "暂无求职信内容。"
+    },
+    "wizard": {
+      "title": "个性化你的求职信",
+      "subtitle": "回答这些问题以生成一封 300-400 字的定制求职信。",
+      "questions": {
+        "companyConnection": {
+          "label": "与公司的联系",
+          "question": "为什么选择这家公司？是否有某个项目、产品、价值观或近期新闻促使你申请？",
+          "placeholder": "例如：我一直关注贵公司在 X 方面的工作……"
+        },
+        "heroAchievement": {
+          "label": "核心成就",
+          "question": "简历中哪 1-2 项成就最契合这个职位？背后的故事是什么？",
+          "placeholder": "例如：我主导了……的迁移"
+        },
+        "missingLink": {
+          "label": "弥补差距",
+          "question": "职位描述中是否有某项技能或工具在你的简历中不突出，但你确实掌握？",
+          "placeholder": "例如：我在个人项目中用过 X，但简历里没写……"
+        },
+        "careerNarrative": {
+          "label": "职业历程",
+          "question": "这次转变是否有背景：转行、晋升、行业转换？你的动机是什么？",
+          "placeholder": "例如：在 X 工作 3 年后，我正转向 Y，因为……"
+        },
+        "formatting": {
+          "label": "格式",
+          "fontLabel": "字体",
+          "fontSizeLabel": "字号",
+          "fonts": ["Georgia", "Arial", "Calibri", "Times New Roman", "Garamond"],
+          "fontSizes": ["10.5pt", "11pt", "11.5pt", "12pt"]
+        },
+        "referenceLine": {
+          "label": "参考行",
+          "jobTitleLabel": "准确的职位名称",
+          "jobTitlePlaceholder": "例如：高级软件工程师",
+          "companyNameLabel": "公司名称",
+          "companyNamePlaceholder": "例如：Stripe"
+        }
+      },
+      "actions": {
+        "generate": "生成求职信",
+        "generating": "生成中……",
+        "regenerate": "重新生成",
+        "regenerating": "重新生成中……",
+        "editAnswers": "编辑回答"
+      },
+      "feedback": {
+        "title": "改进建议",
+        "placeholder": "例如：让第二段更技术化，把字体改为 Garamond 11pt",
+        "submit": "根据反馈重新生成",
+        "submitting": "重新生成中……"
+      },
+      "errors": {
+        "generateFailed": "生成求职信失败：{error}"
+      }
     }
   },
   "outreach": {
@@ -1444,5 +1611,32 @@
       "deleteInProgress": "该职位正在定制中，请在完成后再移除。",
       "clearFailed": "无法清空队列，请重试。"
     }
+  },
+  "usage": {
+    "title": "用量与费用",
+    "subtitle": "各模型的花费、评分和响应时间",
+    "loadError": "无法加载用量统计。",
+    "sessionTitle": "当前会话",
+    "sessionCost": "会话费用",
+    "sessionCalls": "本次会话 {count} 次调用",
+    "reset": "重置会话",
+    "modelsTitle": "按模型",
+    "emptyTitle": "暂无用量",
+    "emptyDescription": "运行简历适配或其他 AI 操作后，各模型统计将显示在此处。",
+    "table": {
+      "model": "模型",
+      "queries": "查询数",
+      "totalCost": "总费用",
+      "avgCost": "每次查询费用",
+      "avgLatency": "平均响应",
+      "rating": "评分"
+    }
+  },
+  "coverLetterViewer": {
+    "loading": "正在加载求职信……",
+    "notFound": "未找到此简历的求职信。",
+    "backToResume": "返回简历",
+    "download": "下载求职信",
+    "failedToLoad": "加载求职信失败。"
   }
 }

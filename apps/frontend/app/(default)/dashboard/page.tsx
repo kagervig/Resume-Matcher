@@ -1,20 +1,23 @@
 'use client';
 
-import { SwissGrid } from '@/components/home/swiss-grid';
 import { ResumeUploadDialog } from '@/components/dashboard/resume-upload-dialog';
 import { MasterResumeChoiceDialog } from '@/components/dashboard/master-resume-choice-dialog';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { DashboardMetrics } from '@/components/dashboard/dashboard-metrics';
+import { PendingResumeTile } from '@/components/dashboard/pending-resume-tile';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Alert } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Button, buttonClass } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Card, CardTitle, CardDescription } from '@/components/ui/card';
 import { StatusIndicator, type StatusTone } from '@/components/ui/status-indicator';
 import { DefaultBadge } from '@/components/common/default-badge';
 import { LlmSetupAlert } from '@/components/common/llm-setup-alert';
+import { PageFrame } from '@/components/ui/page-frame';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 import Link from 'next/link';
 import { useTranslations } from '@/lib/i18n';
-import { formatDate } from '@/lib/format-date';
 import { cn } from '@/lib/utils';
 
 // Optimized Imports for Performance (No Barrel Imports)
@@ -31,6 +34,12 @@ import {
   MAX_MASTER_RESUMES,
   type ResumeListItem,
 } from '@/lib/api/resume';
+import {
+  listApplications,
+  APPLICATION_STATUS_ORDER,
+  type ApplicationColumns,
+} from '@/lib/api/tracker';
+import { fetchSessionUsage, type SessionUsage } from '@/lib/api/usage';
 import { useStatusCache } from '@/lib/context/status-cache';
 import { hasMeaningfulResumeContent } from '@/lib/utils/resume-content';
 
@@ -68,10 +77,6 @@ const STATUS_TONE: Record<ResumeListItem['processing_status'], StatusTone> = {
   pending: 'neutral',
   failed: 'error',
 };
-// Monogram fills: brand tokens only, each AA with white text (lowest: steel, 5.19:1).
-const MONOGRAM_FILLS = ['bg-primary', 'bg-ink', 'bg-success', 'bg-steel', 'bg-destructive'];
-const FILLER_FILLS = ['bg-panel', 'bg-panel-hover', 'bg-panel-hover', 'bg-panel'];
-
 export default function DashboardPage() {
   const { t, locale } = useTranslations();
   const [masterResumeId, setMasterResumeId] = useState<string | null>(null);
@@ -83,6 +88,9 @@ export default function DashboardPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [tailoredResumes, setTailoredResumes] = useState<ResumeListItem[]>([]);
   const [otherMasters, setOtherMasters] = useState<ResumeListItem[]>([]);
+  // Tracker columns + session spend power the mission-control metrics strip.
+  const [applications, setApplications] = useState<ApplicationColumns | null>(null);
+  const [sessionUsage, setSessionUsage] = useState<SessionUsage | null>(null);
   const [defaultMasterTitle, setDefaultMasterTitle] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
@@ -130,9 +138,31 @@ export default function DashboardPage() {
     processingStatus === 'ready' || otherMasters.some((r) => r.processing_status === 'ready');
   const isTailorEnabled = Boolean(masterResumeId) && hasReadyMaster && isLlmConfigured;
 
-  const formatEditedDate = (value: string) =>
-    formatDate(value, locale, { month: 'short', day: '2-digit', year: 'numeric' }) ||
-    t('common.unknown');
+  // Applied cards are every tracker column except "saved" (the pre-application state).
+  const appliedResumeIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (applications) {
+      for (const status of APPLICATION_STATUS_ORDER) {
+        if (status === 'saved') continue;
+        for (const app of applications[status] ?? []) ids.add(app.resume_id);
+      }
+    }
+    return ids;
+  }, [applications]);
+
+  const appliedCount = useMemo(() => {
+    if (!applications) return 0;
+    return APPLICATION_STATUS_ORDER.filter((s) => s !== 'saved').reduce(
+      (sum, s) => sum + (applications[s]?.length ?? 0),
+      0
+    );
+  }, [applications]);
+
+  // Pending = a tailored resume (has a parent) not yet promoted to an applied card.
+  const pendingResumes = useMemo(
+    () => tailoredResumes.filter((r) => r.parent_id && !appliedResumeIds.has(r.resume_id)),
+    [tailoredResumes, appliedResumeIds]
+  );
 
   const adoptMasterResume = useCallback((resumeId: string | null) => {
     if (activeMasterIdRef.current !== resumeId) {
@@ -328,6 +358,33 @@ export default function DashboardPage() {
     loadTailoredResumes();
   }, [loadTailoredResumes]);
 
+  const refreshApplications = useCallback(() => {
+    listApplications()
+      .then((r) => {
+        if (mountedRef.current) setApplications(r.columns);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Tracker columns and session spend feed the metrics strip; failures leave it at zero.
+  useEffect(() => {
+    refreshApplications();
+    fetchSessionUsage()
+      .then((u) => {
+        if (mountedRef.current) setSessionUsage(u);
+      })
+      .catch(() => {});
+  }, [refreshApplications]);
+
+  // Marking a resume applied drops it from the pending queue and re-counts applied cards.
+  const handleApplied = useCallback(
+    (resumeId: string) => {
+      setTailoredResumes((prev) => prev.filter((r) => r.resume_id !== resumeId));
+      refreshApplications();
+    },
+    [refreshApplications]
+  );
+
   // Refresh list when window gains focus (e.g., returning from viewer after delete)
   useEffect(() => {
     const handleFocus = () => {
@@ -517,29 +574,8 @@ export default function DashboardPage() {
     }
   };
 
-  const getMonogram = (title: string): string => {
-    const words = title.split(/\s+/).filter((w) => /^[a-zA-Z]/.test(w));
-    return words
-      .slice(0, 3)
-      .map((w) => w.charAt(0).toUpperCase())
-      .join('');
-  };
-
-  const hashTitle = (title: string): number => {
-    let hash = 0;
-    for (let i = 0; i < title.length; i++) {
-      hash = (hash << 5) - hash + title.charCodeAt(i);
-      hash |= 0;
-    }
-    return Math.abs(hash);
-  };
-
   const atMasterLimit = 1 + otherMasters.length >= MAX_MASTER_RESUMES;
   const showAddTrackTile = Boolean(masterResumeId) && !atMasterLimit && isLlmConfigured;
-  const totalCards =
-    1 + otherMasters.length + tailoredResumes.length + 1 + (showAddTrackTile ? 1 : 0);
-  const fillerCount = Math.max(0, (5 - (totalCards % 5)) % 5);
-  const extraFillerCount = 5;
   const statusDisplay = getStatusDisplay();
   // A failed load with nothing to show: the alert alone, no tiles (an empty account looks different).
   const emptyWithError =
@@ -547,10 +583,15 @@ export default function DashboardPage() {
   const showLlmAlert = Boolean(masterResumeId) && !isLlmConfigured && !statusLoading;
 
   return (
-    <SwissGrid
-      banner={
-        (listError || showLlmAlert) && (
-          <>
+    <PageFrame height="screen">
+      <PageHeader>
+        <PageHeader.Title>{t('nav.dashboard')}</PageHeader.Title>
+        <PageHeader.Subtitle>{t('dashboard.missionControl')}</PageHeader.Subtitle>
+      </PageHeader>
+
+      <div className="@container relative z-10 flex-1 space-y-8 overflow-y-auto overflow-x-hidden p-6 md:p-8">
+        {(listError || showLlmAlert) && (
+          <div className="space-y-4">
             {listError && (
               <Alert tone="error" title={t('dashboard.errors.loadFailed')}>
                 <Button
@@ -572,349 +613,317 @@ export default function DashboardPage() {
                 actionKey="nav.settings"
               />
             )}
-          </>
-        )
-      }
-    >
-      {!emptyWithError && (
-        <>
-          {/* 1. Master Resume Logic */}
-          {!masterResumeId ? (
-            // LLM Not Configured or Upload State
-            !isLlmConfigured && !statusLoading ? (
-              <Link
-                href="/settings"
-                className="group/setup block h-full focus-visible:outline-none"
-              >
-                <Card
-                  variant="interactive"
-                  className="aspect-square h-full border-dashed border-warning bg-warning-tint hover:border-transparent hover:translate-x-0 hover:translate-y-0 hover:bg-primary hover:text-white group-focus-visible/setup:z-20 group-focus-visible/setup:border-transparent group-focus-visible/setup:translate-x-0 group-focus-visible/setup:translate-y-0 group-focus-visible/setup:bg-primary group-focus-visible/setup:text-white group-focus-visible/setup:ring-2 group-focus-visible/setup:ring-inset group-focus-visible/setup:ring-white"
-                >
-                  <div className="flex-1 flex flex-col justify-between">
-                    <Warning
-                      aria-hidden="true"
-                      className="size-6 text-warning-text group-hover:text-white group-focus-visible/setup:text-white"
-                    />
-                    <div>
-                      <CardTitle className="text-lg uppercase text-warning-text mb-2 group-hover:text-white group-focus-visible/setup:text-white">
-                        {t('dashboard.setupRequiredTitle')}
-                      </CardTitle>
-                      <CardDescription className="text-warning-text text-xs group-hover:text-white group-focus-visible/setup:text-white">
-                        {t('dashboard.setupRequiredMessage')}
-                      </CardDescription>
-                      <div className="flex items-center gap-2 mt-4 text-warning-text group-hover:text-white group-focus-visible/setup:text-white">
-                        <Gear aria-hidden="true" className="size-4" />
-                        <span className="font-mono text-xs font-bold uppercase">
-                          {t('nav.goToSettings')}
+          </div>
+        )}
+
+        {!emptyWithError && (
+          <>
+            <DashboardMetrics
+              pendingCount={pendingResumes.length}
+              appliedCount={appliedCount}
+              sessionUsage={sessionUsage}
+              locale={locale}
+            />
+
+            {/* Master Resumes */}
+            <section className="space-y-4">
+              <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-ink">
+                {t('dashboard.masterResume')}
+              </h2>
+              <div className="grid grid-cols-1 gap-4 @2xl:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4">
+                {/* 1. Master Resume Logic */}
+                {!masterResumeId ? (
+                  // LLM Not Configured or Upload State
+                  !isLlmConfigured && !statusLoading ? (
+                    <Link
+                      href="/settings"
+                      className="group/setup block h-full focus-visible:outline-none"
+                    >
+                      <Card
+                        variant="interactive"
+                        className="aspect-square h-full border-dashed border-warning bg-warning-tint hover:border-transparent hover:translate-x-0 hover:translate-y-0 hover:bg-primary hover:text-white group-focus-visible/setup:z-20 group-focus-visible/setup:border-transparent group-focus-visible/setup:translate-x-0 group-focus-visible/setup:translate-y-0 group-focus-visible/setup:bg-primary group-focus-visible/setup:text-white group-focus-visible/setup:ring-2 group-focus-visible/setup:ring-inset group-focus-visible/setup:ring-white"
+                      >
+                        <div className="flex-1 flex flex-col justify-between">
+                          <Warning
+                            aria-hidden="true"
+                            className="size-6 text-warning-text group-hover:text-white group-focus-visible/setup:text-white"
+                          />
+                          <div>
+                            <CardTitle className="text-lg uppercase text-warning-text mb-2 group-hover:text-white group-focus-visible/setup:text-white">
+                              {t('dashboard.setupRequiredTitle')}
+                            </CardTitle>
+                            <CardDescription className="text-warning-text text-xs group-hover:text-white group-focus-visible/setup:text-white">
+                              {t('dashboard.setupRequiredMessage')}
+                            </CardDescription>
+                            <div className="flex items-center gap-2 mt-4 text-warning-text group-hover:text-white group-focus-visible/setup:text-white">
+                              <Gear aria-hidden="true" className="size-4" />
+                              <span className="font-mono text-xs font-bold uppercase">
+                                {t('nav.goToSettings')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    </Link>
+                  ) : (
+                    <Card
+                      variant="interactive"
+                      noPadding
+                      className={cn('aspect-square h-full', TILE_FILL)}
+                    >
+                      <button
+                        type="button"
+                        className={TILE_BUTTON}
+                        aria-label={t('dashboard.initializeMasterResume')}
+                        onClick={() => setIsMasterChoiceDialogOpen(true)}
+                      >
+                        <span
+                          className={cn(
+                            'size-12 border-2 border-ink flex items-center justify-center mb-4',
+                            TILE_WHITE_BORDER
+                          )}
+                        >
+                          <Plus aria-hidden="true" className="size-6" />
                         </span>
+                        <span className="block">
+                          <span className="block font-serif text-xl font-bold uppercase leading-none tracking-tight">
+                            {t('dashboard.initializeMasterResume')}
+                          </span>
+                          <span
+                            className={cn('mt-2 block font-mono text-sm text-steel', TILE_WHITE)}
+                          >
+                            {'// '}
+                            {t('dashboard.initializeSequence')}
+                          </span>
+                        </span>
+                      </button>
+                    </Card>
+                  )
+                ) : (
+                  // Master Resume Exists
+                  <Card variant="interactive" className={cn('aspect-square h-full', TILE_FILL)}>
+                    <div className="flex-1 flex flex-col h-full">
+                      <div className="flex justify-between items-start mb-6">
+                        <div
+                          className={cn(
+                            'size-12 border-2 border-ink bg-primary text-white flex items-center justify-center',
+                            TILE_WHITE_BORDER
+                          )}
+                        >
+                          <span className="font-mono font-bold text-lg">M</span>
+                        </div>
+                        {(processingStatus === 'failed' || processingStatus === 'processing') && (
+                          <span className="relative z-10 inline-flex">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className={cn('z-10', TILE_GHOST_ICON)}
+                              onClick={handleRetryProcessing}
+                              disabled={isRetrying}
+                              aria-label={t('dashboard.retryProcessing')}
+                              title={t('dashboard.retryProcessing')}
+                            >
+                              {isRetrying ? (
+                                <SpinnerGap aria-hidden="true" className="animate-spin" />
+                              ) : (
+                                <ArrowsClockwise aria-hidden="true" />
+                              )}
+                            </Button>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-start gap-2">
+                        <CardTitle className="min-w-0 text-lg line-clamp-2">
+                          <Link href={`/resumes/${masterResumeId}`} className={TILE_LINK}>
+                            {defaultMasterTitle || t('dashboard.masterResume')}
+                          </Link>
+                        </CardTitle>
+                        <DefaultBadge className={TILE_WHITE_BORDER}>
+                          {t('dashboard.defaultBadge')}
+                        </DefaultBadge>
+                      </div>
+
+                      <div className="mt-auto pt-4 flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          {statusDisplay.busy && (
+                            <SpinnerGap
+                              aria-hidden="true"
+                              className={cn(
+                                'size-4 animate-spin',
+                                statusDisplay.tone === 'active' ? 'text-primary' : 'text-steel',
+                                TILE_WHITE
+                              )}
+                            />
+                          )}
+                          <StatusIndicator tone={statusDisplay.tone} className={TILE_STATUS}>
+                            {t('dashboard.statusLine', { status: statusDisplay.text })}
+                          </StatusIndicator>
+                        </div>
+                        {(processingStatus === 'failed' || processingStatus === 'processing') && (
+                          <div className="relative z-10 flex w-fit max-w-full flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className={TILE_ACTION}
+                              onClick={handleRetryProcessing}
+                              disabled={isRetrying}
+                            >
+                              {isRetrying
+                                ? t('dashboard.retryingProcessing')
+                                : t('dashboard.retryProcessing')}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline-destructive"
+                              size="sm"
+                              className={TILE_ACTION}
+                              onClick={handleDeleteAndReupload}
+                            >
+                              {t('dashboard.deleteAndReupload')}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                </Card>
-              </Link>
-            ) : (
-              <Card
-                variant="interactive"
-                noPadding
-                className={cn('aspect-square h-full', TILE_FILL)}
-              >
-                <button
-                  type="button"
-                  className={TILE_BUTTON}
-                  aria-label={t('dashboard.initializeMasterResume')}
-                  onClick={() => setIsMasterChoiceDialogOpen(true)}
-                >
-                  <span
-                    className={cn(
-                      'size-12 border-2 border-ink flex items-center justify-center mb-4',
-                      TILE_WHITE_BORDER
-                    )}
+                  </Card>
+                )}
+
+                {/* 2. Other Master Resumes */}
+                {otherMasters.map((resume) => {
+                  const title = resume.title || resume.filename || t('dashboard.masterTrack');
+                  return (
+                    <Card
+                      key={resume.resume_id}
+                      variant="interactive"
+                      className={cn('aspect-square h-full', TILE_FILL)}
+                    >
+                      <div className="flex-1 flex flex-col">
+                        <div className="flex justify-between items-start mb-6">
+                          <div
+                            className={cn(
+                              'size-12 border-2 border-ink bg-primary text-white flex items-center justify-center',
+                              TILE_WHITE_BORDER
+                            )}
+                          >
+                            <span className="font-mono font-bold">M</span>
+                          </div>
+                          <StatusIndicator
+                            tone={STATUS_TONE[resume.processing_status]}
+                            className={TILE_STATUS}
+                          >
+                            {t(`dashboard.status.${resume.processing_status}`)}
+                          </StatusIndicator>
+                        </div>
+                        <CardTitle className="text-lg">
+                          <Link
+                            href={`/resumes/${resume.resume_id}`}
+                            className={cn(
+                              'block font-serif text-base font-bold leading-tight mb-1 w-full line-clamp-2',
+                              TILE_LINK
+                            )}
+                          >
+                            {title}
+                          </Link>
+                        </CardTitle>
+                        <div className="relative z-10 mt-auto flex w-fit max-w-full flex-wrap gap-2 pt-4">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className={TILE_ACTION}
+                            aria-label={t('dashboard.setDefault')}
+                            onClick={(e) => handleSetDefault(e, resume.resume_id)}
+                          >
+                            {t('dashboard.setDefault')}
+                          </Button>
+                          {!atMasterLimit && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className={TILE_ACTION}
+                              aria-label={t('dashboard.duplicate')}
+                              disabled={isDuplicating || resume.processing_status !== 'ready'}
+                              onClick={(e) => handleDuplicate(e, resume.resume_id)}
+                            >
+                              {t('dashboard.duplicate')}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+
+                {/* 3. Add Master Track */}
+                {showAddTrackTile && (
+                  <Card
+                    variant="interactive"
+                    noPadding
+                    className={cn('aspect-square h-full', TILE_FILL)}
                   >
-                    <Plus aria-hidden="true" className="size-6" />
-                  </span>
-                  <span className="block">
-                    <span className="block font-serif text-xl font-bold uppercase leading-none tracking-tight">
-                      {t('dashboard.initializeMasterResume')}
-                    </span>
-                    <span className={cn('mt-2 block font-mono text-sm text-steel', TILE_WHITE)}>
-                      {'// '}
-                      {t('dashboard.initializeSequence')}
-                    </span>
-                  </span>
-                </button>
-              </Card>
-            )
-          ) : (
-            // Master Resume Exists
-            <Card variant="interactive" className={cn('aspect-square h-full', TILE_FILL)}>
-              <div className="flex-1 flex flex-col h-full">
-                <div className="flex justify-between items-start mb-6">
-                  <div
-                    className={cn(
-                      'size-12 border-2 border-ink bg-primary text-white flex items-center justify-center',
-                      TILE_WHITE_BORDER
-                    )}
-                  >
-                    <span className="font-mono font-bold text-lg">M</span>
-                  </div>
-                  {(processingStatus === 'failed' || processingStatus === 'processing') && (
-                    <span className="relative z-10 inline-flex">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        className={cn('z-10', TILE_GHOST_ICON)}
-                        onClick={handleRetryProcessing}
-                        disabled={isRetrying}
-                        aria-label={t('dashboard.retryProcessing')}
-                        title={t('dashboard.retryProcessing')}
-                      >
-                        {isRetrying ? (
-                          <SpinnerGap aria-hidden="true" className="animate-spin" />
-                        ) : (
-                          <ArrowsClockwise aria-hidden="true" />
-                        )}
-                      </Button>
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <CardTitle className="min-w-0 text-lg line-clamp-2">
-                    <Link href={`/resumes/${masterResumeId}`} className={TILE_LINK}>
-                      {defaultMasterTitle || t('dashboard.masterResume')}
-                    </Link>
-                  </CardTitle>
-                  <DefaultBadge className={TILE_WHITE_BORDER}>
-                    {t('dashboard.defaultBadge')}
-                  </DefaultBadge>
-                </div>
-
-                <div className="mt-auto pt-4 flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    {statusDisplay.busy && (
-                      <SpinnerGap
-                        aria-hidden="true"
-                        className={cn(
-                          'size-4 animate-spin',
-                          statusDisplay.tone === 'active' ? 'text-primary' : 'text-steel',
-                          TILE_WHITE
-                        )}
-                      />
-                    )}
-                    <StatusIndicator tone={statusDisplay.tone} className={TILE_STATUS}>
-                      {t('dashboard.statusLine', { status: statusDisplay.text })}
-                    </StatusIndicator>
-                  </div>
-                  {(processingStatus === 'failed' || processingStatus === 'processing') && (
-                    <div className="relative z-10 flex w-fit max-w-full flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className={TILE_ACTION}
-                        onClick={handleRetryProcessing}
-                        disabled={isRetrying}
-                      >
-                        {isRetrying
-                          ? t('dashboard.retryingProcessing')
-                          : t('dashboard.retryProcessing')}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline-destructive"
-                        size="sm"
-                        className={TILE_ACTION}
-                        onClick={handleDeleteAndReupload}
-                      >
-                        {t('dashboard.deleteAndReupload')}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* 2. Other Master Resumes */}
-          {otherMasters.map((resume) => {
-            const title = resume.title || resume.filename || t('dashboard.masterTrack');
-            return (
-              <Card
-                key={resume.resume_id}
-                variant="interactive"
-                className={cn('aspect-square h-full', TILE_FILL)}
-              >
-                <div className="flex-1 flex flex-col">
-                  <div className="flex justify-between items-start mb-6">
-                    <div
-                      className={cn(
-                        'size-12 border-2 border-ink bg-primary text-white flex items-center justify-center',
-                        TILE_WHITE_BORDER
-                      )}
-                    >
-                      <span className="font-mono font-bold">M</span>
-                    </div>
-                    <StatusIndicator
-                      tone={STATUS_TONE[resume.processing_status]}
-                      className={TILE_STATUS}
-                    >
-                      {t(`dashboard.status.${resume.processing_status}`)}
-                    </StatusIndicator>
-                  </div>
-                  <CardTitle className="text-lg">
-                    <Link
-                      href={`/resumes/${resume.resume_id}`}
-                      className={cn(
-                        'block font-serif text-base font-bold leading-tight mb-1 w-full line-clamp-2',
-                        TILE_LINK
-                      )}
-                    >
-                      {title}
-                    </Link>
-                  </CardTitle>
-                  <div className="relative z-10 mt-auto flex w-fit max-w-full flex-wrap gap-2 pt-4">
-                    <Button
+                    <button
                       type="button"
-                      variant="outline"
-                      size="sm"
-                      className={TILE_ACTION}
-                      aria-label={t('dashboard.setDefault')}
-                      onClick={(e) => handleSetDefault(e, resume.resume_id)}
+                      className={TILE_BUTTON}
+                      aria-label={t('dashboard.addMasterTrack')}
+                      onClick={() => setIsMasterChoiceDialogOpen(true)}
                     >
-                      {t('dashboard.setDefault')}
-                    </Button>
-                    {!atMasterLimit && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className={TILE_ACTION}
-                        aria-label={t('dashboard.duplicate')}
-                        disabled={isDuplicating || resume.processing_status !== 'ready'}
-                        onClick={(e) => handleDuplicate(e, resume.resume_id)}
+                      <span className="flex items-center gap-2 font-serif text-lg font-bold uppercase leading-none tracking-tight">
+                        <Plus aria-hidden="true" className="size-4 shrink-0" />
+                        {t('dashboard.addMasterTrack')}
+                      </span>
+                      <span
+                        className={cn('block font-mono text-sm uppercase text-steel', TILE_WHITE)}
                       >
-                        {t('dashboard.duplicate')}
-                      </Button>
-                    )}
-                  </div>
+                        {t('dashboard.masterLimitReached', { max: MAX_MASTER_RESUMES })}
+                      </span>
+                    </button>
+                  </Card>
+                )}
+              </div>
+            </section>
+
+            {/* Pending Applications */}
+            <section className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-ink">
+                  {t('dashboard.pendingApplications')}
+                </h2>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => router.push('/tailor')}
+                  disabled={!isTailorEnabled}
+                >
+                  <Plus aria-hidden="true" />
+                  {t('dashboard.generateNew')}
+                </Button>
+              </div>
+              {pendingResumes.length === 0 ? (
+                <EmptyState
+                  variant="framed"
+                  title={t('dashboard.pendingApplications')}
+                  description={t('dashboard.noResumesDescription')}
+                />
+              ) : (
+                <div className="grid grid-cols-1 gap-4 @2xl:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4">
+                  {pendingResumes.map((resume) => (
+                    <PendingResumeTile
+                      key={resume.resume_id}
+                      resume={resume}
+                      onApplied={handleApplied}
+                      locale={locale}
+                    />
+                  ))}
                 </div>
-              </Card>
-            );
-          })}
-
-          {/* 3. Add Master Track */}
-          {showAddTrackTile && (
-            <Card variant="interactive" noPadding className={cn('aspect-square h-full', TILE_FILL)}>
-              <button
-                type="button"
-                className={TILE_BUTTON}
-                aria-label={t('dashboard.addMasterTrack')}
-                onClick={() => setIsMasterChoiceDialogOpen(true)}
-              >
-                <span className="flex items-center gap-2 font-serif text-lg font-bold uppercase leading-none tracking-tight">
-                  <Plus aria-hidden="true" className="size-4 shrink-0" />
-                  {t('dashboard.addMasterTrack')}
-                </span>
-                <span className={cn('block font-mono text-sm uppercase text-steel', TILE_WHITE)}>
-                  {t('dashboard.masterLimitReached', { max: MAX_MASTER_RESUMES })}
-                </span>
-              </button>
-            </Card>
-          )}
-
-          {/* 4. Tailored Resumes */}
-          {tailoredResumes.map((resume) => {
-            const title =
-              resume.title || resume.jobSnippet || resume.filename || t('dashboard.tailoredResume');
-            const monogramFill = MONOGRAM_FILLS[hashTitle(title) % MONOGRAM_FILLS.length];
-            return (
-              <Card
-                key={resume.resume_id}
-                variant="interactive"
-                className={cn('aspect-square h-full', TILE_FILL)}
-              >
-                <div className="flex-1 flex flex-col">
-                  <div className="flex justify-between items-start mb-6">
-                    <div
-                      className={cn(
-                        'size-12 border-2 border-ink text-white flex items-center justify-center',
-                        TILE_WHITE_BORDER,
-                        monogramFill
-                      )}
-                    >
-                      <span className="font-mono font-bold">{getMonogram(title)}</span>
-                    </div>
-                    <StatusIndicator
-                      tone={STATUS_TONE[resume.processing_status]}
-                      className={TILE_STATUS}
-                    >
-                      {t(`dashboard.status.${resume.processing_status}`)}
-                    </StatusIndicator>
-                  </div>
-                  <CardTitle className="text-lg">
-                    <Link
-                      href={`/resumes/${resume.resume_id}`}
-                      className={cn(
-                        'block font-serif text-base font-bold leading-tight mb-1 w-full line-clamp-2',
-                        TILE_LINK
-                      )}
-                    >
-                      {title}
-                    </Link>
-                  </CardTitle>
-                  <CardDescription
-                    className={cn('mt-auto pt-4 uppercase tabular-nums', TILE_WHITE)}
-                  >
-                    {t('dashboard.edited', {
-                      date: formatEditedDate(resume.updated_at || resume.created_at),
-                    })}
-                  </CardDescription>
-                </div>
-              </Card>
-            );
-          })}
-
-          {/* 5. Create Tailored Resume: not a highlight target and no stretched click area. The
-              blue + button is the only control, with the Button primitive's own press-in and ring. */}
-          <Card className="aspect-square h-full">
-            <div className="flex-1 flex flex-col items-center justify-center text-center h-full">
-              <Button
-                type="button"
-                className="size-20"
-                onClick={() => router.push('/tailor')}
-                disabled={!isTailorEnabled}
-                aria-label={t('dashboard.createResume')}
-                title={t('dashboard.createResume')}
-              >
-                <Plus aria-hidden="true" className="size-8" />
-              </Button>
-              <p className="text-xs font-mono mt-4 uppercase text-steel">
-                {t('dashboard.createResume')}
-              </p>
-            </div>
-          </Card>
-
-          {/* 6. Fillers */}
-          {Array.from({ length: fillerCount }).map((_, index) => (
-            <Card
-              key={`filler-${index}`}
-              variant="ghost"
-              noPadding
-              className="hidden md:block bg-canvas aspect-square h-full opacity-50 pointer-events-none"
-            />
-          ))}
-
-          {Array.from({ length: extraFillerCount }).map((_, index) => (
-            <Card
-              key={`extra-filler-${index}`}
-              variant="ghost"
-              noPadding
-              className={`hidden md:block ${FILLER_FILLS[index % FILLER_FILLS.length]} aspect-square h-full opacity-70 pointer-events-none`}
-            />
-          ))}
-        </>
-      )}
+              )}
+            </section>
+          </>
+        )}
+      </div>
 
       <MasterResumeChoiceDialog
         open={isMasterChoiceDialogOpen}
@@ -963,6 +972,34 @@ export default function DashboardPage() {
         variant="danger"
         showCancelButton={false}
       />
-    </SwissGrid>
+
+      {/* Footer navigation to the resume archive and tracker */}
+      <div className="relative z-30 flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-ink bg-canvas p-4">
+        <Link
+          href="/resumes"
+          className={buttonClass({ variant: 'outline', size: 'sm', className: 'min-w-36' })}
+        >
+          {t('nav.allResumes')}
+        </Link>
+        <Link
+          href="/tracker"
+          className={buttonClass({ variant: 'outline', size: 'sm', className: 'min-w-36' })}
+        >
+          {t('nav.applicationTracker')}
+        </Link>
+        <Link
+          href="/usage"
+          className={buttonClass({ variant: 'outline', size: 'sm', className: 'min-w-36' })}
+        >
+          {t('nav.usage')}
+        </Link>
+        <Link
+          href="/settings"
+          className={buttonClass({ variant: 'warning', size: 'sm', className: 'min-w-36' })}
+        >
+          {t('nav.settings')}
+        </Link>
+      </div>
+    </PageFrame>
   );
 }

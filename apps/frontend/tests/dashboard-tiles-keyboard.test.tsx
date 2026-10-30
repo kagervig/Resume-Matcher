@@ -10,8 +10,26 @@ const api = vi.hoisted(() => ({
   remove: vi.fn(),
   push: vi.fn(),
   setHasMaster: vi.fn(),
+  listApps: vi.fn(),
+  applyResume: vi.fn(),
+  sessionUsage: vi.fn(),
   llmConfigured: true,
 }));
+// Re-arm the mount-time data calls after each resetAllMocks (empty tracker, zero spend).
+function armDashboardData() {
+  api.listApps.mockResolvedValue({
+    columns: {
+      saved: [],
+      applied: [],
+      no_response: [],
+      response: [],
+      interview: [],
+      accepted: [],
+      rejected: [],
+    },
+  });
+  api.sessionUsage.mockResolvedValue({ cost_usd: 0, calls: 0, started_at: '2026-01-01' });
+}
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: api.push }) }));
 vi.mock('@/lib/i18n', () => ({
   useTranslations: () => ({
@@ -37,6 +55,22 @@ vi.mock('@/lib/api/resume', () => ({
   deleteResume: (...args: unknown[]) => api.remove(...args),
   retryProcessing: vi.fn(),
   fetchJobDescription: vi.fn().mockResolvedValue(null),
+}));
+vi.mock('@/lib/api/tracker', () => ({
+  listApplications: (...args: unknown[]) => api.listApps(...args),
+  applyResume: (...args: unknown[]) => api.applyResume(...args),
+  APPLICATION_STATUS_ORDER: [
+    'saved',
+    'applied',
+    'no_response',
+    'response',
+    'interview',
+    'accepted',
+    'rejected',
+  ],
+}));
+vi.mock('@/lib/api/usage', () => ({
+  fetchSessionUsage: (...args: unknown[]) => api.sessionUsage(...args),
 }));
 vi.mock('@/components/dashboard/resume-upload-dialog', () => ({
   ResumeUploadDialog: ({
@@ -122,12 +156,13 @@ const classes = (el: Element) => classAttr(el).split(/\s+/);
 
 /**
  * Owner ruling (round 2): hover or keyboard focus inside a tile fills it Hyper Blue and turns its
- * text white. There is no ink outline (Card interactive's hover:border-ink is overridden, so the
- * border stays transparent) and no 1px press-in.
+ * text white. The tile has a visible ink border at rest; on hover the border becomes transparent
+ * so it blends into the blue fill. There is no 1px press-in.
  */
 function expectBlueFillTile(card: HTMLElement): void {
   expect(classes(card)).toEqual(
     expect.arrayContaining([
+      'border-ink',
       'hover:bg-primary',
       'has-[:focus-visible]:bg-primary',
       'hover:text-white',
@@ -137,7 +172,6 @@ function expectBlueFillTile(card: HTMLElement): void {
       'hover:translate-y-0',
     ])
   );
-  expect(card.className).not.toMatch(/border-ink/);
   expect(card.className).not.toMatch(/translate-[xy]-px/);
   expect(card.className).not.toMatch(/bg-white/);
 }
@@ -180,6 +214,7 @@ describe('dashboard tiles are keyboard-reachable', () => {
     vi.resetAllMocks();
     api.llmConfigured = true;
     api.get.mockResolvedValue(status());
+    armDashboardData();
   });
   afterEach(() => vi.useRealTimers());
 
@@ -314,7 +349,7 @@ describe('dashboard tiles are keyboard-reachable', () => {
     const levels = screen.getAllByRole('heading').map((h) => Number(h.tagName.slice(1)));
     expect(levels[0]).toBe(1);
     expect(levels.slice(1, levels.indexOf(3))).toContain(2);
-    const section = screen.getByRole('heading', { level: 2 });
+    const section = screen.getAllByRole('heading', { level: 2 })[0];
     const firstTile = screen.getAllByRole('heading', { level: 3 })[0];
     expect(
       section.compareDocumentPosition(firstTile) & Node.DOCUMENT_POSITION_FOLLOWING
@@ -347,6 +382,7 @@ describe('dashboard tile highlight and the one blue action', () => {
     vi.resetAllMocks();
     api.llmConfigured = true;
     api.get.mockResolvedValue(status());
+    armDashboardData();
   });
 
   it('fills resume tiles Hyper Blue and turns their text, status and marks white', async () => {
@@ -447,17 +483,16 @@ describe('dashboard tile highlight and the one blue action', () => {
     }
   });
 
-  it('keeps Create tailored resume the one blue primary at rest, with its own press-in and ring', async () => {
+  it('keeps Generate New Resume the one blue primary action, with its own press-in and ring', async () => {
     api.list.mockResolvedValue([{ ...row('m1', true), is_default_master: true }]);
     render(<DashboardPage />);
-    const label = await screen.findByText('dashboard.createResume');
-    const create = within(label.parentElement!).getByRole('button');
-    expect(classes(create)).toContain('bg-primary');
+    const generate = await screen.findByRole('button', { name: 'dashboard.generateNew' });
+    expect(classes(generate)).toContain('bg-primary');
+    // It is the page's only blue primary (master monogram squares are <div>, not button/a).
     expect(document.querySelectorAll('button.bg-primary, a.bg-primary')).toHaveLength(1);
 
-    // The tile is not highlighted: only the + button reacts to the pointer, through the Button
-    // primitive's own hover (darker blue, 1px press-in) and its primary focus ring.
-    expect(classes(create)).toEqual(
+    // It reacts through the Button primitive's own hover (darker blue, 1px press-in) and primary ring.
+    expect(classes(generate)).toEqual(
       expect.arrayContaining([
         'hover:bg-primary-hover',
         'hover:translate-x-px',
@@ -465,37 +500,24 @@ describe('dashboard tile highlight and the one blue action', () => {
         'focus-visible:ring-primary',
       ])
     );
-    expect(classes(create)).not.toContain('hover:bg-white');
-    expect(classes(create)).not.toContain('focus-visible:ring-white');
-    // No stretched click area: the button is not made static and has no ::after overlay.
-    expect(classes(create)).not.toContain('static');
-    expect(classAttr(create)).not.toMatch(/after:/);
-    // The label under it is plain steel text that never turns white.
-    expect(classes(label)).toContain('text-steel');
-    expect(classAttr(label)).not.toMatch(/group-/);
+    expect(classes(generate)).not.toContain('hover:bg-white');
+    expect(classes(generate)).not.toContain('focus-visible:ring-white');
+    // Not a stretched tile link: no ::after overlay.
+    expect(classAttr(generate)).not.toMatch(/after:/);
   });
 
-  it('keeps the Create tile plain: no blue highlight and the + button is its only control', async () => {
+  it('keeps Generate New a plain header control, not an interactive highlight tile', async () => {
     api.list.mockResolvedValue([{ ...row('m1', true), is_default_master: true }]);
     render(<DashboardPage />);
-    const label = await screen.findByText('dashboard.createResume');
-    const create = within(label.parentElement!).getByRole('button');
-    const tile = create.closest('.aspect-square') as HTMLElement;
+    const generate = await screen.findByRole('button', { name: 'dashboard.generateNew' });
 
-    // Not a TILE_FILL tile: nothing on it fills blue or turns text white on hover or focus.
-    expect(classAttr(tile)).not.toMatch(
-      /hover:bg-primary|has-\[:focus-visible\]|hover:text-white|hover:border-transparent/
+    // It is not wrapped in a blue-fill highlight tile: no group ancestor, no aspect-square tile.
+    expect(generate.closest('.group')).toBeNull();
+    expect(generate.closest('[class*="aspect-square"]')).toBeNull();
+    // It carries none of the TILE_FILL highlight markers.
+    expect(classAttr(generate)).not.toMatch(
+      /has-\[:focus-visible\]|hover:border-transparent|hover:text-white/
     );
-    // Not an interactive Card either: no group (so no group-hover recolouring) and no hand
-    // cursor over the parts of the tile that do nothing.
-    expect(classes(tile)).not.toContain('group');
-    expect(classes(tile)).not.toContain('cursor-pointer');
-    expect(tile.closest('.group')).toBeNull();
-
-    const controls = tile.querySelectorAll(
-      'a, button, input, select, textarea, [role="button"], [role="link"], [tabindex]'
-    );
-    expect(Array.from(controls)).toEqual([create]);
   });
 
   it('never stretches a ::after over a tile on an element that also moves on hover', async () => {
@@ -510,7 +532,7 @@ describe('dashboard tile highlight and the one blue action', () => {
     ]);
     render(<DashboardPage />);
     await screen.findByRole('button', { name: 'dashboard.deleteAndReupload' });
-    expect(screen.getByRole('button', { name: 'dashboard.createResume' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'dashboard.generateNew' })).toBeInTheDocument();
 
     const stretched = Array.from(document.querySelectorAll('*')).filter((el) =>
       /(^|\s)(?:[\w-]+:)*after:inset-0(\s|$)/.test(classAttr(el))
@@ -523,13 +545,11 @@ describe('dashboard tile highlight and the one blue action', () => {
     }
   });
 
-  it('does not light up the Create tile while tailoring is unavailable', async () => {
+  it('disables Generate New while tailoring is unavailable', async () => {
     api.list.mockResolvedValue([]);
     render(<DashboardPage />);
-    const label = await screen.findByText('dashboard.createResume');
-    const create = within(label.parentElement!).getByRole('button');
-    expect(create).toBeDisabled();
-    expect(create.closest('.group')).toBeNull();
-    expect(create.parentElement!.parentElement!.className).not.toMatch(/hover:bg-primary/);
+    const generate = await screen.findByRole('button', { name: 'dashboard.generateNew' });
+    expect(generate).toBeDisabled();
+    expect(generate.closest('.group')).toBeNull();
   });
 });

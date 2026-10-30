@@ -249,6 +249,32 @@ describe('builder panels', () => {
 });
 
 describe('builder preview tabs', () => {
+  it('enables the cover-letter tab on a tailored resume even when no cover letter exists', async () => {
+    currentSearch = 'id=a';
+    fetchResume.mockResolvedValue(response());
+    const Builder = await importBuilder();
+    render(<Builder />);
+    await act(async () => {
+      await fetchResume.mock.results[0].value;
+    });
+
+    const tab = screen.getByRole('tab', { name: 'builder.previewTabs.coverLetter' });
+    expect(tab).not.toBeDisabled();
+  });
+
+  it('disables the cover-letter tab on a master resume when no cover letter exists', async () => {
+    currentSearch = 'id=a';
+    fetchResume.mockResolvedValue({ ...response(), parent_id: null });
+    const Builder = await importBuilder();
+    render(<Builder />);
+    await act(async () => {
+      await fetchResume.mock.results[0].value;
+    });
+
+    const tab = screen.getByRole('tab', { name: 'builder.previewTabs.coverLetter' });
+    expect(tab).toBeDisabled();
+  });
+
   it('names the tab strip after the Preview heading and points only the selected tab at the panel', async () => {
     fetchResume.mockResolvedValue(response());
     const Builder = await importBuilder();
@@ -628,7 +654,7 @@ describe.each(['cover-letter', 'outreach'] as const)('%s save queued during gene
 
       const expected = editTiming === 'unchanged' ? 'GENERATED' : 'LATEST EDIT';
       expect(serverContent).toBe(expected);
-      expect(screen.getByRole('textbox')).toHaveValue(expected);
+      expect(screen.getByDisplayValue(expected)).toBeInTheDocument();
       const unload = new Event('beforeunload', { cancelable: true });
       window.dispatchEvent(unload);
       expect(unload.defaultPrevented).toBe(false);

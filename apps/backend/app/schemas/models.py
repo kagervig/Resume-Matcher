@@ -202,6 +202,7 @@ class Education(BaseModel):
     institution: str = ""
     degree: str = ""
     years: str = ""
+    grade: str | None = None
     description: str | None = None
 
     @field_validator("description", mode="before")
@@ -249,6 +250,10 @@ class AdditionalInfo(BaseModel):
     languages: list[str] = Field(default_factory=list)
     certificationsTraining: list[str] = Field(default_factory=list)
     awards: list[str] = Field(default_factory=list)
+    # Per-group visibility flags for optional sub-groups.
+    # None means visibility is derived from content presence (backwards-compatible).
+    # When set, only groups with True are shown regardless of content.
+    visibility: dict[str, bool] | None = None
 
     @field_validator(
         "technicalSkills",
@@ -342,6 +347,14 @@ class CustomSection(BaseModel):
         return _coerce_optional_text(value)
 
 
+# Default heading for the built-in "additional" (skills) section.
+ADDITIONAL_SECTION_DISPLAY_NAME = "Skills"
+
+# Headings this section shipped with before it was renamed to "Skills". Rewritten
+# on read so existing resumes pick up the new default (the frontend only
+# re-localizes a name that still equals the current English default).
+LEGACY_ADDITIONAL_SECTION_DISPLAY_NAMES = frozenset({"Skills & Awards"})
+
 # Default section metadata for backward compatibility
 DEFAULT_SECTION_META: list[dict[str, Any]] = [
     {
@@ -392,7 +405,7 @@ DEFAULT_SECTION_META: list[dict[str, Any]] = [
     {
         "id": "additional",
         "key": "additional",
-        "displayName": "Skills & Awards",
+        "displayName": ADDITIONAL_SECTION_DISPLAY_NAME,
         "sectionType": SectionType.STRING_LIST,
         "isDefault": True,
         "isVisible": True,
@@ -411,9 +424,27 @@ def normalize_resume_data(data: dict[str, Any]) -> dict[str, Any]:
         # Use deepcopy to avoid shared mutable reference bug
         # Without this, all resumes would share the same list reference
         data["sectionMeta"] = copy.deepcopy(DEFAULT_SECTION_META)
+    else:
+        _migrate_additional_section_heading(data["sectionMeta"])
     if "customSections" not in data:
         data["customSections"] = {}
     return data
+
+
+def _migrate_additional_section_heading(section_meta: list[Any]) -> None:
+    """Rewrite a legacy "additional" heading to the current default, in place.
+
+    A resume created before the rename stores the old heading verbatim, which the
+    frontend treats as a user customization and never re-localizes. Only the known
+    shipped default is rewritten, so a name a user actually chose is left alone.
+    """
+    for section in section_meta:
+        if (
+            isinstance(section, dict)
+            and section.get("key") == "additional"
+            and section.get("displayName") in LEGACY_ADDITIONAL_SECTION_DISPLAY_NAMES
+        ):
+            section["displayName"] = ADDITIONAL_SECTION_DISPLAY_NAME
 
 
 class ResumeData(BaseModel):
@@ -492,10 +523,14 @@ class ResumeFetchData(BaseModel):
     raw_resume: RawResume
     processed_resume: ResumeData | None = None
     cover_letter: str | None = None
+    cover_letter_signature: str | None = None
+    cover_letter_context: dict | None = None
     outreach_message: str | None = None
     interview_prep: InterviewPrepData | None = None
     parent_id: str | None = None  # For determining if resume is tailored
     title: str | None = None
+    job_company: str | None = None
+    job_role: str | None = None
     is_master: bool = False
     is_default_master: bool = False
 
@@ -519,6 +554,8 @@ class ResumeSummary(BaseModel):
     created_at: str
     updated_at: str
     title: str | None = None
+    job_company: str | None = None
+    job_role: str | None = None
 
 
 class ResumeListResponse(BaseModel):
@@ -551,6 +588,8 @@ class JobUploadRequest(BaseModel):
 
     job_descriptions: list[str]
     resume_id: str | None = None
+    company: str | None = None
+    role: str | None = None
 
 
 class JobUploadResponse(BaseModel):
@@ -677,6 +716,8 @@ class ResumeDiffSummary(BaseModel):
     descriptions_modified: int
     certifications_added: int
     high_risk_changes: int  # High-risk additions
+    awards_added: int = 0
+    languages_added: int = 0
 
 
 class ATSSubScores(BaseModel):
@@ -739,6 +780,27 @@ class ATSScoreRecord(BaseModel):
 
     score: ATSScore
     calculated_at: str = Field(description="UTC ISO-8601 time of the calculation")
+
+
+class JDSummary(BaseModel):
+    """AI digest of a job description shown on the JD Match view."""
+
+    summary: str = Field(default="", description="Plain-language overview of the role")
+    core_competencies: list[str] = Field(
+        default_factory=list,
+        description="Most important abilities the role requires",
+    )
+    keywords: list[str] = Field(
+        default_factory=list,
+        description="Salient keywords, sourced from the job's extracted keywords",
+    )
+
+
+class JDSummaryRecord(BaseModel):
+    """Cached JD summary of the job a tailored resume targets."""
+
+    summary: JDSummary
+    generated_at: str = Field(description="UTC ISO-8601 time the summary was generated")
 
 
 class ImproveResumeData(BaseModel):
@@ -846,6 +908,7 @@ class FeatureConfigRequest(BaseModel):
     enable_cover_letter: bool | None = None
     enable_outreach_message: bool | None = None
     enable_interview_prep: bool | None = None
+    preserve_education: bool | None = None
 
 
 class FeatureConfigResponse(BaseModel):
@@ -854,6 +917,19 @@ class FeatureConfigResponse(BaseModel):
     enable_cover_letter: bool = False
     enable_outreach_message: bool = False
     enable_interview_prep: bool = False
+    preserve_education: bool = True
+
+
+class CoverLetterSignatureConfigRequest(BaseModel):
+    """Request to update the global default cover letter signature."""
+
+    signature: str = ""
+
+
+class CoverLetterSignatureConfigResponse(BaseModel):
+    """Response carrying the global default cover letter signature."""
+
+    signature: str = ""
 
 
 class LanguageConfigRequest(BaseModel):
@@ -962,6 +1038,12 @@ class UpdateCoverLetterRequest(BaseModel):
     content: str
 
 
+class UpdateCoverLetterSignatureRequest(BaseModel):
+    """Request to update the cover letter signature."""
+
+    content: str
+
+
 class UpdateOutreachMessageRequest(BaseModel):
     """Request to update outreach message content."""
 
@@ -1020,7 +1102,7 @@ class ResumeChange(BaseModel):
     path: str = Field(
         description="Dot+bracket path, e.g. 'workExperience[0].description[1]'"
     )
-    action: Literal["replace", "append", "reorder", "add_skill"]
+    action: Literal["replace", "append", "reorder", "add_skill", "remove_skill"]
     original: str | list[str] | None = Field(
         default=None,
         description="Current text at path — for verification. May be a list (the "
@@ -1098,3 +1180,23 @@ class JobMetadataParseResponse(BaseModel):
     role: str
     company: str
     job_req_id: str
+
+
+class CoverLetterContext(BaseModel):
+    """Candidate-provided answers that guide cover letter generation."""
+
+    company_connection: str = ""  # "Why Us?" answer
+    hero_achievement: str = ""  # best-fit achievement answer
+    missing_link: str = ""  # skill gap bridging answer
+    career_narrative: str = ""  # context for the move
+    font_style: str = "Georgia"  # formatting pref
+    font_size: str = "11pt"  # formatting pref
+    job_title: str = ""  # for RE: line
+    company_name: str = ""  # for RE: line
+
+
+class CoverLetterGenerateRequest(BaseModel):
+    """Request body for the guided cover letter endpoint."""
+
+    context: CoverLetterContext | None = None
+    feedback: str = ""  # free-text improvement instructions

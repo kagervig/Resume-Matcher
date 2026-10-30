@@ -21,8 +21,27 @@ type PageProps = {
   searchParams?: Promise<{
     pageSize?: string;
     lang?: string;
+    font?: string;
+    fontSize?: string;
   }>;
 };
+
+const SAFE_FONTS = ['Georgia', 'Arial', 'Calibri', 'Times New Roman', 'Garamond'] as const;
+type SafeFont = (typeof SAFE_FONTS)[number];
+
+const SAFE_FONT_SIZES = ['10.5pt', '11pt', '11.5pt', '12pt'] as const;
+type SafeFontSize = (typeof SAFE_FONT_SIZES)[number];
+
+// Whitelist font params so a malicious URL cannot inject arbitrary CSS values.
+function parseSafeFont(value: string | undefined): SafeFont {
+  return (SAFE_FONTS as readonly string[]).includes(value ?? '') ? (value as SafeFont) : 'Georgia';
+}
+
+function parseSafeFontSize(value: string | undefined): SafeFontSize {
+  return (SAFE_FONT_SIZES as readonly string[]).includes(value ?? '')
+    ? (value as SafeFontSize)
+    : '11pt';
+}
 
 interface PersonalInfo {
   name?: string;
@@ -35,6 +54,7 @@ interface PersonalInfo {
 interface CoverLetterData {
   coverLetter: string;
   personalInfo: PersonalInfo;
+  signature: string;
 }
 
 async function fetchCoverLetterData(resumeId: string): Promise<CoverLetterData> {
@@ -47,6 +67,7 @@ async function fetchCoverLetterData(resumeId: string): Promise<CoverLetterData> 
   const payload = (await res.json()) as {
     data: {
       cover_letter?: string;
+      cover_letter_signature?: string;
       processed_resume?: {
         personalInfo?: PersonalInfo;
       };
@@ -56,6 +77,7 @@ async function fetchCoverLetterData(resumeId: string): Promise<CoverLetterData> 
   return {
     coverLetter: payload.data.cover_letter || '',
     personalInfo: payload.data.processed_resume?.personalInfo || {},
+    signature: payload.data.cover_letter_signature ?? '',
   };
 }
 
@@ -73,6 +95,8 @@ export default async function PrintCoverLetterPage({ params, searchParams }: Pag
   const pageSize = parsePageSize(resolvedSearchParams?.pageSize);
   const pageDims = PAGE_DIMENSIONS[pageSize];
   const locale = resolveLocale(resolvedSearchParams?.lang);
+  const resolvedFont = parseSafeFont(resolvedSearchParams?.font);
+  const resolvedFontSize = parseSafeFontSize(resolvedSearchParams?.fontSize);
 
   // Fetch cover letter data from API (same pattern as resume)
   let coverLetterData: CoverLetterData;
@@ -85,7 +109,7 @@ export default async function PrintCoverLetterPage({ params, searchParams }: Pag
     });
     return <div data-print-error="cover-letter-unavailable">Cover letter unavailable</div>;
   }
-  const { coverLetter, personalInfo } = coverLetterData;
+  const { coverLetter, personalInfo, signature } = coverLetterData;
 
   // Standard cover letter margins
   const margins = { top: 25, right: 25, bottom: 25, left: 25 };
@@ -114,7 +138,7 @@ export default async function PrintCoverLetterPage({ params, searchParams }: Pag
         minHeight: `${pageDims.height}mm`,
         padding: `${margins.top}mm ${margins.right}mm ${margins.bottom}mm ${margins.left}mm`,
         boxSizing: 'border-box',
-        fontFamily: 'Georgia, serif',
+        fontFamily: `${resolvedFont}, serif`,
         color: '#000000',
       }}
     >
@@ -140,7 +164,6 @@ export default async function PrintCoverLetterPage({ params, searchParams }: Pag
           style={{
             marginTop: '2mm',
             fontSize: '9pt',
-            fontFamily: 'monospace',
             color: '#666',
             display: 'flex',
             flexWrap: 'wrap',
@@ -159,7 +182,6 @@ export default async function PrintCoverLetterPage({ params, searchParams }: Pag
         style={{
           marginBottom: '8mm',
           fontSize: '10pt',
-          fontFamily: 'monospace',
           color: '#666',
         }}
       >
@@ -173,7 +195,7 @@ export default async function PrintCoverLetterPage({ params, searchParams }: Pag
             <p
               key={idx}
               style={{
-                fontSize: '11pt',
+                fontSize: resolvedFontSize,
                 margin: '0 0 4mm 0',
                 textAlign: 'justify',
               }}
@@ -182,11 +204,18 @@ export default async function PrintCoverLetterPage({ params, searchParams }: Pag
             </p>
           ))
         ) : (
-          <p style={{ fontSize: '11pt', color: '#999' }}>
+          <p style={{ fontSize: resolvedFontSize, color: '#999' }}>
             {translate(locale, 'coverLetter.print.emptyContent')}
           </p>
         )}
       </div>
+
+      {/* Signature */}
+      {signature && (
+        <div style={{ marginTop: '8mm' }}>
+          <p style={{ fontSize: resolvedFontSize, whiteSpace: 'pre-line' }}>{signature}</p>
+        </div>
+      )}
     </div>
   );
 }

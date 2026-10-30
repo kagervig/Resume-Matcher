@@ -1,7 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Warning, X, CaretDown, CaretRight, SpinnerGap } from '@phosphor-icons/react';
+import {
+  Warning,
+  X,
+  CaretDown,
+  CaretRight,
+  SpinnerGap,
+  ThumbsUp,
+  ThumbsDown,
+} from '@phosphor-icons/react';
+import { submitRating, type Rating } from '@/lib/api/usage';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { PanelHeader } from '@/components/ui/panel-header';
@@ -30,6 +39,9 @@ interface DiffPreviewModalProps {
   detailedChanges?: ResumeFieldDiff[];
   errorMessage?: string;
   selectionSummary?: BulletSelectionSummary | null;
+  /** The preview's improve request_id; enables the good/bad rating control. */
+  requestId?: string;
+  warnings?: string[];
 }
 
 export function DiffPreviewModal({
@@ -42,11 +54,34 @@ export function DiffPreviewModal({
   detailedChanges,
   errorMessage,
   selectionSummary,
+  requestId,
+  warnings = [],
 }: DiffPreviewModalProps) {
   const { t } = useTranslations();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['summary', 'skills', 'descriptions', 'experience'])
   );
+
+  // Good/bad feedback for this preview's LLM result.
+  const [rating, setRating] = useState<Rating | null>(null);
+  const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [ratingError, setRatingError] = useState(false);
+
+  // A new preview (new request_id) clears any prior rating state.
+  useEffect(() => {
+    setRating(null);
+    setRatingError(false);
+  }, [requestId]);
+
+  const handleRate = (value: Rating) => {
+    if (!requestId) return;
+    setRatingSubmitting(true);
+    setRatingError(false);
+    submitRating(requestId, value)
+      .then(() => setRating(value))
+      .catch(() => setRatingError(true))
+      .finally(() => setRatingSubmitting(false));
+  };
 
   // Elapsed timer while confirming
   const [elapsed, setElapsed] = useState(0);
@@ -148,52 +183,110 @@ export function DiffPreviewModal({
         <DialogBody className="space-y-4">
           {/* Summary cards */}
           <div className="border-2 border-ink bg-white p-4">
-            <PanelHeader level="h3" title={t('tailor.diffModal.summary')} />
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <StatCard
-                label={t('tailor.diffModal.skillsAdded')}
-                value={diffSummary.skills_added}
-                variant="success"
-              />
-              <StatCard
-                label={t('tailor.diffModal.skillsRemoved')}
-                value={diffSummary.skills_removed}
-                variant="warning"
-              />
-              <StatCard
-                label={t('tailor.diffModal.certificationsAdded')}
-                value={diffSummary.certifications_added}
-                variant="info"
-              />
-              <StatCard
-                label={t('tailor.diffModal.descriptionsModified')}
-                value={diffSummary.descriptions_modified}
-                variant="info"
-              />
-              <StatCard
-                label={t('tailor.diffModal.highRiskChanges')}
-                value={diffSummary.high_risk_changes}
-                variant={diffSummary.high_risk_changes > 0 ? 'danger' : 'success'}
-              />
+            <div className="flex items-center justify-between mb-4">
+              <PanelHeader level="h3" title={t('tailor.diffModal.summary')} className="mb-0" />
+              <span className="font-mono text-2xl font-bold tabular-nums text-ink">
+                {diffSummary.total_changes}
+              </span>
             </div>
 
-            {selectionLine && (
-              <p className="mt-4 font-mono text-xs uppercase tracking-wider text-ink-soft">
-                {selectionLine}
-              </p>
-            )}
+            {diffSummary.total_changes === 0 ? (
+              <div className="space-y-3">
+                <p className="font-mono text-sm font-bold uppercase tracking-wider text-ink">
+                  {t('tailor.diffModal.noChangesTitle')}
+                </p>
+                <p className="text-sm text-ink-soft">{t('tailor.diffModal.noChangesMessage')}</p>
+                {selectionLine && (
+                  <p className="font-mono text-xs uppercase tracking-wider text-ink-soft">
+                    {selectionLine}
+                  </p>
+                )}
+                {warnings.length > 0 && (
+                  <ul className="space-y-1">
+                    {warnings.map((w, i) => (
+                      <li key={i} className="font-mono text-xs text-steel">
+                        — {w}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : (
+              <>
+                {selectionLine && (
+                  <p className="mb-4 font-mono text-xs uppercase tracking-wider text-ink-soft">
+                    {selectionLine}
+                  </p>
+                )}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+                  <StatCard
+                    label={t('tailor.diffModal.skillsAdded')}
+                    value={diffSummary.skills_added}
+                    variant="success"
+                  />
+                  <StatCard
+                    label={t('tailor.diffModal.skillsRemoved')}
+                    value={diffSummary.skills_removed}
+                    variant="warning"
+                  />
+                  <StatCard
+                    label={t('tailor.diffModal.certificationsAdded')}
+                    value={diffSummary.certifications_added}
+                    variant="info"
+                  />
+                  {(diffSummary.languages_added ?? 0) > 0 && (
+                    <StatCard
+                      label={t('tailor.diffModal.languagesAdded')}
+                      value={diffSummary.languages_added ?? 0}
+                      variant="info"
+                    />
+                  )}
+                  {(diffSummary.awards_added ?? 0) > 0 && (
+                    <StatCard
+                      label={t('tailor.diffModal.awardsAdded')}
+                      value={diffSummary.awards_added ?? 0}
+                      variant="info"
+                    />
+                  )}
+                  <StatCard
+                    label={t('tailor.diffModal.descriptionsModified')}
+                    value={diffSummary.descriptions_modified}
+                    variant="info"
+                  />
+                  <StatCard
+                    label={t('tailor.diffModal.highRiskChanges')}
+                    value={diffSummary.high_risk_changes}
+                    variant={diffSummary.high_risk_changes > 0 ? 'danger' : 'success'}
+                  />
+                </div>
 
-            {diffSummary.high_risk_changes > 0 && (
-              <Alert
-                tone="warning"
-                className="mt-4"
-                title={t('tailor.diffModal.warningTitle', {
-                  count: diffSummary.high_risk_changes,
-                })}
-              >
-                {t('tailor.diffModal.warningMessage')}
-              </Alert>
+                {diffSummary.high_risk_changes > 0 && (
+                  <Alert
+                    tone="warning"
+                    className="mt-4"
+                    title={t('tailor.diffModal.warningTitle', {
+                      count: diffSummary.high_risk_changes,
+                    })}
+                  >
+                    {t('tailor.diffModal.warningMessage')}
+                  </Alert>
+                )}
+
+                {warnings.length > 0 && (
+                  <div className="mt-4 space-y-1">
+                    <p className="font-mono text-xs uppercase tracking-wider text-steel">
+                      {t('tailor.diffModal.warningsList')}
+                    </p>
+                    <ul className="space-y-1">
+                      {warnings.map((w, i) => (
+                        <li key={i} className="font-mono text-xs text-steel">
+                          — {w}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -326,6 +419,42 @@ export function DiffPreviewModal({
             )}
           </div>
         </DialogBody>
+
+        {/* Rate the generated result (independent of accept/reject) */}
+        {requestId && (
+          <div className="shrink-0 flex flex-wrap items-center gap-3 border-t border-ink px-6 py-3">
+            <span className="font-mono text-xs uppercase tracking-wider text-steel">
+              {t('tailor.rating.prompt')}
+            </span>
+            {rating ? (
+              <span className="font-mono text-xs text-success">{t('tailor.rating.thanks')}</span>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleRate('good')}
+                  disabled={ratingSubmitting}
+                >
+                  <ThumbsUp className="w-4 h-4" />
+                  {t('tailor.rating.good')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleRate('bad')}
+                  disabled={ratingSubmitting}
+                >
+                  <ThumbsDown className="w-4 h-4" />
+                  {t('tailor.rating.bad')}
+                </Button>
+              </div>
+            )}
+            {ratingError && (
+              <span className="font-mono text-xs text-destructive">{t('tailor.rating.error')}</span>
+            )}
+          </div>
+        )}
 
         {/* Pinned status: stays visible while the changes list scrolls */}
         {errorMessage && (

@@ -354,3 +354,21 @@ def test_award_add() -> None:
         c for c in changes if c.field_type == "award" and c.change_type == "added"
     ]
     assert [c.new_value for c in awards] == ["Employee of the Year 2022"]
+
+
+def test_summary_awards_added_counter() -> None:
+    original = {"additional": {"awards": []}}
+    improved = {"additional": {"awards": ["MVP Q3 2024", "Hackathon Winner"]}}
+
+    summary, _ = calculate_resume_diff(original, improved)
+
+    assert summary.awards_added == 2
+
+
+def test_summary_languages_added_counter() -> None:
+    original = {"additional": {"languages": []}}
+    improved = {"additional": {"languages": ["Spanish (Conversational)"]}}
+
+    summary, _ = calculate_resume_diff(original, improved)
+
+    assert summary.languages_added == 1

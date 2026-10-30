@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, buttonClass } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label, labelClass } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
@@ -59,6 +60,8 @@ export default function TailorPage() {
   const countedResumes = useRef(new Set<string>());
   const confirmationBusy = useRef(false);
   const [jobDescription, setJobDescription] = useState('');
+  const [company, setCompany] = useState('');
+  const [role, setRole] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [masterResumeId, setMasterResumeId] = useState<string | null>(null);
@@ -281,7 +284,10 @@ export default function TailorPage() {
       // 1. Upload Job Description
       // The API expects an array of strings
       previewSourceIdRef.current = resumeId;
-      const jobId = await uploadJobDescriptions([description], resumeId);
+      const jobId = await uploadJobDescriptions([description], resumeId, {
+        company: company.trim() || undefined,
+        role: role.trim() || undefined,
+      });
       if (!isCurrent(token)) return;
       incrementJobs(); // Update cached counter
 
@@ -581,6 +587,31 @@ export default function TailorPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="tailor-company">{t('tailor.company')}</Label>
+              <Input
+                id="tailor-company"
+                placeholder={t('tailor.companyPlaceholder')}
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                disabled={isLoading}
+                maxLength={120}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="tailor-role">{t('tailor.role')}</Label>
+              <Input
+                id="tailor-role"
+                placeholder={t('tailor.rolePlaceholder')}
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                disabled={isLoading}
+                maxLength={120}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <Dropdown
               options={TAILOR_PAGE_LIMITS.map((limit) => ({
                 id: String(limit ?? 'none'),
@@ -686,6 +717,8 @@ export default function TailorPage() {
           detailedChanges={pendingResult?.data?.detailed_changes}
           errorMessage={diffConfirmError ?? undefined}
           selectionSummary={pendingResult?.data?.bullet_selection}
+          requestId={pendingResult?.data?.request_id}
+          warnings={pendingResult?.data?.warnings}
         />
       )}
 
