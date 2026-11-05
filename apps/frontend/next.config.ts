@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
     resolveAlias: { 'motion/react': 'framer-motion' },
   },
   experimental: {
+    agentUpgrade: 'security',
     proxyTimeout: REQUEST_TIMEOUT_MS,
     // Tree-shake barrel imports — saves ~200-800ms cold start per route
     optimizePackageImports: [
