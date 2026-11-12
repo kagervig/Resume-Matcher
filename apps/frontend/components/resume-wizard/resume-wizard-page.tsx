@@ -17,6 +17,7 @@ import {
   readResumeWizardDraft,
   writeResumeWizardDraft,
 } from '@/lib/utils/resume-wizard-storage';
+import { applyResumeDefaults, readResumeDefaults } from '@/lib/utils/resume-defaults-storage';
 import {
   createInitialResumeWizardState,
   finalizeResumeWizard,
@@ -60,7 +61,11 @@ export function ResumeWizardPage() {
       setState((current) => ({ ...current, step: 'complete' }));
     } else {
       const saved = readResumeWizardDraft();
-      if (saved) setState(saved);
+      // Layer saved defaults on top of the restored draft (or the fresh initial
+      // state). applyResumeDefaults only fills empty slots, so this seeds a new
+      // resume without clobbering a draft's content — and, crucially, a stale
+      // empty draft from a prior visit no longer blocks defaults from appearing.
+      setState((current) => applyResumeDefaults(saved ?? current, readResumeDefaults()));
     }
     setIsLoaded(true);
   }, []);

@@ -21,7 +21,7 @@ import { fetchDefaultCoverLetterSignature } from '@/lib/api/config';
 import { DownloadSimple, SpinnerGap } from '@phosphor-icons/react';
 import { useTranslations } from '@/lib/i18n';
 import { useLanguage } from '@/lib/context/language-context';
-import { downloadBlobAsFile, openUrlInNewTab, sanitizeFilename } from '@/lib/utils/download';
+import { buildResumeFilename, downloadBlobAsFile, openUrlInNewTab } from '@/lib/utils/download';
 
 export default function CoverLetterViewerPage() {
   const { t } = useTranslations();
@@ -33,7 +33,7 @@ export default function CoverLetterViewerPage() {
   const [signature, setSignature] = useState('');
   const [personalInfo, setPersonalInfo] = useState<CoverLetterPersonalInfo>({});
   const [context, setContext] = useState<CoverLetterContext | null>(null);
-  const [resumeTitle, setResumeTitle] = useState<string | null>(null);
+  const [jobCompany, setJobCompany] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -63,7 +63,7 @@ export default function CoverLetterViewerPage() {
         setSignature(data.cover_letter_signature || defaultSignature);
         setPersonalInfo((data.processed_resume?.personalInfo as CoverLetterPersonalInfo) ?? {});
         setContext(data.cover_letter_context ?? null);
-        setResumeTitle(data.title ?? null);
+        setJobCompany(data.job_company ?? null);
       } catch (err) {
         if (!isMounted.current) return;
         console.error('Failed to load cover letter:', err);
@@ -82,7 +82,8 @@ export default function CoverLetterViewerPage() {
       const blob = context
         ? await downloadCoverLetterPdf(resumeId, 'A4', uiLanguage, context)
         : await downloadCoverLetterPdf(resumeId, 'A4', uiLanguage);
-      const filename = sanitizeFilename(resumeTitle, resumeId, 'cover-letter');
+      const userName = personalInfo.name?.trim() || null;
+      const filename = buildResumeFilename(userName, jobCompany, resumeId, 'cover-letter');
       downloadBlobAsFile(blob, filename);
     } catch (err) {
       console.error('Failed to download cover letter:', err);

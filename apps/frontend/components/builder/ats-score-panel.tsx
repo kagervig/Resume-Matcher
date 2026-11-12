@@ -14,6 +14,10 @@ interface AtsScorePanelProps {
   /** Recalculation scores the saved resume, so it waits until edits are saved. */
   hasUnsavedChanges: boolean;
   template?: TemplateType;
+  /** Adds a JD keyword to the resume's skills (makes the ATS keyword tags clickable). */
+  onAddKeyword?: (keyword: string) => void;
+  /** Lower-cased skills already in the resume; their tags render as added. */
+  addedKeywords?: Set<string>;
 }
 
 type LoadState =
@@ -22,7 +26,13 @@ type LoadState =
   | { status: 'failed' };
 
 /** Last calculated ATS score of a tailored resume, with on-demand recalculation. */
-export function AtsScorePanel({ resumeId, hasUnsavedChanges, template }: AtsScorePanelProps) {
+export function AtsScorePanel({
+  resumeId,
+  hasUnsavedChanges,
+  template,
+  onAddKeyword,
+  addedKeywords,
+}: AtsScorePanelProps) {
   const { t, locale } = useTranslations();
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [recalculating, setRecalculating] = useState(false);
@@ -114,7 +124,12 @@ export function AtsScorePanel({ resumeId, hasUnsavedChanges, template }: AtsScor
       )}
 
       {record ? (
-        <ATSScoreCard atsScore={record.score} template={template} />
+        <ATSScoreCard
+          atsScore={record.score}
+          template={template}
+          onAddKeyword={onAddKeyword}
+          addedKeywords={addedKeywords}
+        />
       ) : (
         state.status === 'loaded' && (
           <p className="text-sm text-ink-soft">{t('builder.jdMatch.atsScore.notCalculated')}</p>

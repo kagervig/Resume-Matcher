@@ -1,5 +1,6 @@
 'use client';
 
+import { Check, Plus } from '@phosphor-icons/react';
 import type { ATSScore, ATSSubScores } from '@/components/common/resume_previewer_context';
 import { Alert } from '@/components/ui/alert';
 import { useTranslations } from '@/lib/i18n';
@@ -10,6 +11,13 @@ interface ATSScoreCardProps {
   atsScore: ATSScore;
   /** Template the resume will be exported with; drives the layout warning. */
   template?: TemplateType;
+  /**
+   * When provided, keyword tags become buttons that add the keyword to the
+   * resume's skills. Omitted on read-only surfaces (e.g. the tailor preview).
+   */
+  onAddKeyword?: (keyword: string) => void;
+  /** Lower-cased skills already in the resume; their tags render as added. */
+  addedKeywords?: Set<string>;
 }
 
 // Display order; title_match and date_consistency are null when they couldn't be scored.
@@ -65,36 +73,77 @@ function KeywordList({
   title,
   keywords,
   tone,
+  onAddKeyword,
+  addedKeywords,
 }: {
   title: string;
   keywords: string[];
   tone: 'missing' | 'injectable';
+  onAddKeyword?: (keyword: string) => void;
+  addedKeywords?: Set<string>;
 }) {
+  const { t } = useTranslations();
+  const toneClass =
+    tone === 'missing'
+      ? 'border-destructive bg-destructive-tint text-destructive'
+      : 'border-primary bg-info-tint text-primary';
   return (
     <div>
       <p className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-steel">
         {title}
       </p>
       <ul className="flex flex-wrap gap-2">
-        {keywords.map((keyword, i) => (
-          <li
-            key={`${tone}-${i}-${keyword}`}
-            className={cn(
-              'border px-2 py-1 font-mono text-xs',
-              tone === 'missing'
-                ? 'border-destructive bg-destructive-tint text-destructive'
-                : 'border-primary bg-info-tint text-primary'
-            )}
-          >
-            {keyword}
-          </li>
-        ))}
+        {keywords.map((keyword, i) => {
+          const added = addedKeywords?.has(keyword.trim().toLowerCase()) ?? false;
+          if (!onAddKeyword) {
+            return (
+              <li
+                key={`${tone}-${i}-${keyword}`}
+                className={cn('border px-2 py-1 font-mono text-xs', toneClass)}
+              >
+                {keyword}
+              </li>
+            );
+          }
+          return (
+            <li key={`${tone}-${i}-${keyword}`}>
+              <button
+                type="button"
+                disabled={added}
+                onClick={() => onAddKeyword(keyword)}
+                aria-label={t(
+                  added ? 'builder.jdMatch.addedToSkills' : 'builder.jdMatch.addToSkills',
+                  { keyword }
+                )}
+                className={cn(
+                  'flex items-center gap-1 border px-2 py-1 font-mono text-xs',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-white',
+                  added
+                    ? 'cursor-default border-success bg-success-tint text-success'
+                    : cn(toneClass, 'hover:translate-x-px hover:translate-y-px hover:shadow-none')
+                )}
+              >
+                {added ? (
+                  <Check aria-hidden="true" className="size-3" weight="bold" />
+                ) : (
+                  <Plus aria-hidden="true" className="size-3" />
+                )}
+                {keyword}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
 }
 
-export function ATSScoreCard({ atsScore, template }: ATSScoreCardProps) {
+export function ATSScoreCard({
+  atsScore,
+  template,
+  onAddKeyword,
+  addedKeywords,
+}: ATSScoreCardProps) {
   const { t } = useTranslations();
   const { overall_score, sub_scores, missing_keywords, injectable_keywords, recommendations } =
     atsScore;
@@ -135,6 +184,8 @@ export function ATSScoreCard({ atsScore, template }: ATSScoreCardProps) {
           title={t('tailor.atsScore.missingKeywords')}
           keywords={missing_keywords}
           tone="missing"
+          onAddKeyword={onAddKeyword}
+          addedKeywords={addedKeywords}
         />
       )}
       {injectable_keywords.length > 0 && (
@@ -142,6 +193,8 @@ export function ATSScoreCard({ atsScore, template }: ATSScoreCardProps) {
           title={t('tailor.atsScore.injectableKeywords')}
           keywords={injectable_keywords}
           tone="injectable"
+          onAddKeyword={onAddKeyword}
+          addedKeywords={addedKeywords}
         />
       )}
       {recommendations.length > 0 && (

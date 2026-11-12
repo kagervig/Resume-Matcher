@@ -67,6 +67,7 @@ import {
 import { withLocalizedDefaultSections } from '@/lib/utils/section-helpers';
 import { useLanguage } from '@/lib/context/language-context';
 import { buildResumeFilename, downloadBlobAsFile, openUrlInNewTab } from '@/lib/utils/download';
+import { toTitleCase } from '@/lib/utils/title-case';
 import { normalizeResumeForRender, normalizeResumeForSave } from '@/lib/utils/resume-normalization';
 import {
   buildResumeDraft,
@@ -684,6 +685,34 @@ const ResumeBuilderContent = () => {
     setTemplateSettings(newSettings);
   }, []);
 
+  // Lower-cased current skills, so JD-match tags already covered render as added.
+  const skillKeywordSet = useMemo(
+    () =>
+      new Set(
+        (resumeData.additional?.technicalSkills ?? []).map((skill) => skill.trim().toLowerCase())
+      ),
+    [resumeData.additional?.technicalSkills]
+  );
+
+  // Add a JD-match keyword to the skills section, title-cased and de-duplicated.
+  const handleAddSkillFromKeyword = useCallback(
+    (keyword: string) => {
+      const skill = toTitleCase(keyword.trim());
+      if (!skill) return;
+      const existing = resumeData.additional?.technicalSkills ?? [];
+      if (existing.some((s) => s.trim().toLowerCase() === skill.toLowerCase())) {
+        showNotification(t('builder.jdMatch.skillAlreadyPresent', { skill }), 'default');
+        return;
+      }
+      handleUpdate({
+        ...resumeData,
+        additional: { ...resumeData.additional, technicalSkills: [...existing, skill] },
+      });
+      showNotification(t('builder.jdMatch.skillAdded', { skill }), 'success');
+    },
+    [resumeData, handleUpdate, showNotification, t]
+  );
+
   const queueResumeSave = useCallback(
     (editorData: ResumeData) => {
       if (!resumeId) {
@@ -1024,7 +1053,7 @@ const ResumeBuilderContent = () => {
     try {
       setIsDownloading(true);
       const blob = await downloadResumePdf(resumeId, templateSettings, uiLanguage);
-      const company = getCompanyFromTitle(resumeTitle);
+      const company = jobCompany ?? getCompanyFromTitle(resumeTitle);
       const userName = resumeData.personalInfo?.name?.trim() || null;
       const filename = buildResumeFilename(userName, company, resumeId, 'resume');
       downloadBlobAsFile(blob, filename);
@@ -1201,7 +1230,7 @@ const ResumeBuilderContent = () => {
             coverLetterContext
           )
         : await downloadCoverLetterPdf(resumeId, templateSettings.pageSize, uiLanguage);
-      const company = getCompanyFromTitle(resumeTitle);
+      const company = jobCompany ?? getCompanyFromTitle(resumeTitle);
       const userName = resumeData.personalInfo?.name?.trim() || null;
       const filename = buildResumeFilename(userName, company, resumeId, 'cover-letter');
       downloadBlobAsFile(blob, filename);
@@ -1706,6 +1735,8 @@ const ResumeBuilderContent = () => {
                         resumeId={resumeId}
                         hasUnsavedChanges={hasUnsavedChanges}
                         template={templateSettings.template}
+                        onAddKeyword={handleAddSkillFromKeyword}
+                        addedKeywords={skillKeywordSet}
                       />
                       <JdSummaryPanel key={`summary-${resumeId}`} resumeId={resumeId} />
                     </>

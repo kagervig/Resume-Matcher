@@ -326,6 +326,10 @@
       }
     },
     "jdMatch": {
+      "addToSkills": "Add {keyword} to skills",
+      "addedToSkills": "{keyword} is already in your skills",
+      "skillAdded": "Added {skill} to your skills.",
+      "skillAlreadyPresent": "{skill} is already in your skills.",
       "summary": {
         "title": "Resumen de la oferta",
         "description": "Un resumen con IA de esta descripción del puesto: lo esencial, las competencias clave y las palabras clave.",
@@ -945,6 +949,47 @@
     }
   },
   "settings": {
+    "defaults": {
+      "title": "Default Resume Content",
+      "description": "Save your contact details and education once. New resumes you build in the wizard start pre-filled with these — you can still change them per resume without affecting your saved defaults.",
+      "contactHeading": "Contact Info",
+      "educationHeading": "Education History",
+      "fields": {
+        "name": "Full Name",
+        "email": "Email",
+        "phone": "Phone Number",
+        "linkedin": "LinkedIn URL",
+        "portfolio": "GitHub / Portfolio URL",
+        "location": "City / Location"
+      },
+      "education": {
+        "institution": "School / Institution",
+        "degree": "Degree",
+        "years": "Graduation Year(s)",
+        "grade": "Grade / GPA",
+        "details": "Relevant Details",
+        "add": "Add Education",
+        "remove": "Remove",
+        "empty": "No education added yet."
+      },
+      "projectsHeading": "Projects",
+      "projects": {
+        "name": "Project Name",
+        "role": "Role",
+        "years": "Year(s)",
+        "github": "GitHub URL",
+        "website": "Website URL",
+        "add": "Add Project",
+        "remove": "Remove",
+        "empty": "No projects added yet."
+      },
+      "save": "Save Defaults",
+      "saved": "Defaults saved",
+      "errors": {
+        "nameRequired": "Full name is required.",
+        "emailInvalid": "Enter a valid email address."
+      }
+    },
     "title": "Configuración",
     "subtitle": "Configura tus preferencias",
     "aiProvider": "Proveedor de IA",

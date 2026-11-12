@@ -43,6 +43,7 @@ import {
 } from '@/lib/api/usage';
 import { CHATGPT_RETURN_OUTCOMES, type ChatGptReturnOutcome } from '@/lib/api/chatgpt';
 import { ChatGptConnection } from '@/components/settings/chatgpt-connection';
+import { DefaultResumeContent } from '@/components/settings/default-resume-content';
 import { getVersionString } from '@/lib/config/version';
 import { ToggleSwitch } from '@/components/ui/toggle-switch';
 import { useStatusCache } from '@/lib/context/status-cache';
@@ -1580,6 +1581,8 @@ export default function SettingsPage() {
               </div>
             </div>
           </section>
+
+          <DefaultResumeContent />
 
           {/* Language Settings Section */}
           <section className="space-y-6">

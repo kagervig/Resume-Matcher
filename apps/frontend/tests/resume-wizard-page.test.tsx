@@ -7,6 +7,8 @@ import {
   postResumeWizardTurn,
   type ResumeWizardState,
 } from '@/lib/api';
+import { writeResumeWizardDraft } from '@/lib/utils/resume-wizard-storage';
+import { writeResumeDefaults } from '@/lib/utils/resume-defaults-storage';
 
 const push = vi.fn();
 const incrementResumes = vi.fn();
@@ -43,6 +45,22 @@ describe('ResumeWizardPage', () => {
     render(<ResumeWizardPage />);
     expect(screen.getByText(/Hi — I'll help you build your master resume/)).toBeInTheDocument();
     expect(screen.getByRole('textbox')).toBeInTheDocument();
+  });
+
+  it('seeds saved defaults into the preview even when a stale empty draft exists', () => {
+    // A prior visit left an empty draft; before the fix this blocked seeding.
+    writeResumeWizardDraft(createInitialResumeWizardState());
+    writeResumeDefaults({
+      contact: { name: 'Ada Lovelace' },
+      education: [{ id: 1, institution: 'Analytical Engine U', degree: 'Maths', years: '1843' }],
+      projects: [],
+    });
+
+    render(<ResumeWizardPage />);
+
+    expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
+    // The preview joins degree and institution: "Maths · Analytical Engine U".
+    expect(screen.getByText(/Analytical Engine U/)).toBeInTheDocument();
   });
 
   it('renders inside the page frame with one PageHeader h1 and no nested main', () => {

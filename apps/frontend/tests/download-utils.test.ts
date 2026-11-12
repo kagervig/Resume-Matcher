@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeFilename } from '@/lib/utils/download';
+import { buildResumeFilename, sanitizeFilename } from '@/lib/utils/download';
 
 describe('sanitizeFilename', () => {
   describe('Basic functionality', () => {
@@ -400,5 +400,45 @@ describe('sanitizeFilename', () => {
       const graphemeCount = Array.from(result.slice(0, -4)).length;
       expect(graphemeCount).toBeLessThanOrEqual(100);
     });
+  });
+});
+
+describe('buildResumeFilename', () => {
+  it('appends the company after the name and type for a resume', () => {
+    expect(buildResumeFilename('Ada Lovelace', 'Acme Corp', 'id-1', 'resume')).toBe(
+      'Ada Lovelace - Resume - Acme Corp.pdf'
+    );
+  });
+
+  it('appends the company for a cover letter', () => {
+    expect(buildResumeFilename('Ada Lovelace', 'Acme Corp', 'id-1', 'cover-letter')).toBe(
+      'Ada Lovelace - Cover Letter - Acme Corp.pdf'
+    );
+  });
+
+  it('omits the company segment when no company is known', () => {
+    expect(buildResumeFilename('Ada Lovelace', null, 'id-1', 'resume')).toBe(
+      'Ada Lovelace - Resume.pdf'
+    );
+  });
+
+  it('ignores a blank company', () => {
+    expect(buildResumeFilename('Ada Lovelace', '   ', 'id-1', 'resume')).toBe(
+      'Ada Lovelace - Resume.pdf'
+    );
+  });
+
+  it('still includes the company when the name is missing', () => {
+    expect(buildResumeFilename(null, 'Acme Corp', 'id-1', 'resume')).toBe('Resume - Acme Corp.pdf');
+  });
+
+  it('sanitizes invalid characters in the company name', () => {
+    expect(buildResumeFilename('Ada', 'Acme/Beta: Inc', 'id-1', 'resume')).toBe(
+      'Ada - Resume - Acme-Beta- Inc.pdf'
+    );
+  });
+
+  it('falls back to the id when neither name nor company is known', () => {
+    expect(buildResumeFilename(null, null, 'id-1', 'resume')).toBe('resume_id-1.pdf');
   });
 });
