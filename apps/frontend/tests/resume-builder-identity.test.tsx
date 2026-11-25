@@ -34,6 +34,7 @@ vi.mock('@/lib/api/resume', () => ({
   generateOutreachMessage: vi.fn(),
   generateInterviewPrep: vi.fn(),
   fetchJobDescription: vi.fn(() => Promise.resolve(null)),
+  fetchExperienceSuggestions: vi.fn(() => Promise.resolve({ companies: [], titles: [] })),
 }));
 
 vi.mock('@/lib/i18n', () => {

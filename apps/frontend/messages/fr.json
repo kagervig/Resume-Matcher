@@ -1505,6 +1505,12 @@
     "created": {
       "title": "CV principal créé",
       "description": "Votre CV principal a été créé. Ouvrez-le pour continuer à le modifier."
+    },
+    "experience": {
+      "titleLabel": "Intitulé du poste",
+      "companyLabel": "Entreprise",
+      "titlePlaceholder": "p. ex. Ingénieur backend",
+      "companyPlaceholder": "p. ex. Acme Corp"
     }
   },
   "tracker": {

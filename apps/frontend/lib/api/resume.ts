@@ -322,6 +322,20 @@ export async function fetchResumeList(includeMaster = false): Promise<ResumeList
   return payload.data;
 }
 
+export interface ExperienceSuggestions {
+  companies: string[];
+  titles: string[];
+}
+
+/** Distinct companies/titles from the user's own resumes + tracker cards. */
+export async function fetchExperienceSuggestions(): Promise<ExperienceSuggestions> {
+  const res = await apiFetch('/resumes/experience-suggestions');
+  if (!res.ok) {
+    throw new Error(`Failed to load experience suggestions (status ${res.status}).`);
+  }
+  return (await res.json()) as ExperienceSuggestions;
+}
+
 export async function updateResume(
   resumeId: string,
   resumeData: ProcessedResume

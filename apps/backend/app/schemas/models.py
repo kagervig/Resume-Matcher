@@ -469,6 +469,13 @@ class ResumeData(BaseModel):
 
 
 # API Response Models
+class ExperienceSuggestionsResponse(BaseModel):
+    """Distinct companies/titles from the user's own resumes and tracker cards."""
+
+    companies: list[str] = Field(default_factory=list)
+    titles: list[str] = Field(default_factory=list)
+
+
 class ResumeUploadResponse(BaseModel):
     """Response for resume upload."""
 

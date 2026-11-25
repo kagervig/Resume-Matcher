@@ -23,6 +23,13 @@ vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>();
   return { ...actual, finalizeResumeWizard: vi.fn(), postResumeWizardTurn: vi.fn() };
 });
+vi.mock('@/lib/api/resume', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/api/resume')>();
+  return {
+    ...actual,
+    fetchExperienceSuggestions: vi.fn().mockResolvedValue({ companies: [], titles: [] }),
+  };
+});
 
 const mockedPostTurn = vi.mocked(postResumeWizardTurn);
 const mockedFinalize = vi.mocked(finalizeResumeWizard);

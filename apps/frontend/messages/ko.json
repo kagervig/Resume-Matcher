@@ -1505,6 +1505,12 @@
     "created": {
       "title": "마스터 이력서 생성 완료",
       "description": "마스터 이력서를 만들었습니다. 이력서를 열어 계속 편집하세요."
+    },
+    "experience": {
+      "titleLabel": "직무",
+      "companyLabel": "회사",
+      "titlePlaceholder": "예: 백엔드 엔지니어",
+      "companyPlaceholder": "예: Acme Corp"
     }
   },
   "tracker": {

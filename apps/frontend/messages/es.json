@@ -1505,6 +1505,12 @@
     "created": {
       "title": "Currículum maestro creado",
       "description": "Tu currículum maestro se creó. Ábrelo para seguir editando."
+    },
+    "experience": {
+      "titleLabel": "Puesto",
+      "companyLabel": "Empresa",
+      "titlePlaceholder": "p. ej. Ingeniero de backend",
+      "companyPlaceholder": "p. ej. Acme Corp"
     }
   },
   "tracker": {

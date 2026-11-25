@@ -26,6 +26,7 @@ import {
   type ResumeWizardSection,
   type ResumeWizardState,
 } from '@/lib/api';
+import { fetchExperienceSuggestions, type ExperienceSuggestions } from '@/lib/api/resume';
 import { LivePreview } from './live-preview';
 import { QuestionCard } from './question-card';
 
@@ -45,6 +46,13 @@ export function ResumeWizardPage() {
   const { incrementResumes, setHasMasterResume } = useStatusCache();
   const [state, setState] = useState<ResumeWizardState>(() => createInitialResumeWizardState());
   const [answer, setAnswer] = useState('');
+  // Structured work-experience inputs; composed into the submitted answer text.
+  const [jobTitle, setJobTitle] = useState('');
+  const [company, setCompany] = useState('');
+  const [suggestions, setSuggestions] = useState<ExperienceSuggestions>({
+    companies: [],
+    titles: [],
+  });
   const [errorKey, setErrorKey] = useState<string | null>(null);
   // The server's own reason for a refused finalize (e.g. the master limit), shown verbatim.
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
@@ -70,6 +78,14 @@ export function ResumeWizardPage() {
     setIsLoaded(true);
   }, []);
 
+  // Autocomplete suggestions from the user's own resumes + tracker cards. Best-effort:
+  // a failure just leaves the fields as plain text inputs.
+  useEffect(() => {
+    fetchExperienceSuggestions()
+      .then(setSuggestions)
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (!isLoaded || state.step === 'complete') return;
     setDraftStorageUnavailable(!writeResumeWizardDraft(state));
@@ -87,6 +103,18 @@ export function ResumeWizardPage() {
 
   const sectionLabel = t(`resumeWizard.sections.${state.current_question.section}`);
   const errorMessage = errorDetail ?? (errorKey ? t(errorKey) : null);
+  const isWorkExperience =
+    state.step === 'question' && state.current_question.section === 'workExperience';
+  const hasStructuredInput = jobTitle.trim().length > 0 || company.trim().length > 0;
+
+  // Fold the structured Title/Company into the free-text answer so the server turn
+  // flow parses them like any other answer (e.g. "Backend Engineer at Acme. <details>").
+  const composeAnswer = (): string => {
+    const details = answer.trim();
+    if (!isWorkExperience || !hasStructuredInput) return details;
+    const lead = [jobTitle.trim(), company.trim()].filter(Boolean).join(' at ');
+    return [lead, details].filter(Boolean).join('. ');
+  };
 
   const runTurn = async (
     action: 'answer' | 'skip' | 'back' | 'review',
@@ -100,10 +128,12 @@ export function ResumeWizardPage() {
       const response = await postResumeWizardTurn({
         state,
         action,
-        ...(withAnswer ? { answer: { text: answer.trim() } } : {}),
+        ...(withAnswer ? { answer: { text: composeAnswer() } } : {}),
       });
       setState(response.state);
       setAnswer('');
+      setJobTitle('');
+      setCompany('');
     } catch {
       setErrorKey(errorTranslationKey);
     } finally {
@@ -112,7 +142,7 @@ export function ResumeWizardPage() {
   };
 
   const handleContinue = () => {
-    if (answer.trim().length === 0 || isBusy) return;
+    if (isBusy || (answer.trim().length === 0 && !(isWorkExperience && hasStructuredInput))) return;
     void runTurn('answer', 'resumeWizard.errors.turnFailed', true);
   };
   const handleSkip = () => void runTurn('skip', 'resumeWizard.errors.turnFailed', false);
@@ -248,10 +278,17 @@ export function ResumeWizardPage() {
             <QuestionCard
               step={state.step === 'complete' ? 'review' : state.step}
               question={state.current_question.text}
+              section={state.current_question.section}
               sectionLabel={sectionLabel}
               progress={state.progress}
               answer={answer}
               onAnswerChange={setAnswer}
+              jobTitle={jobTitle}
+              company={company}
+              onJobTitleChange={setJobTitle}
+              onCompanyChange={setCompany}
+              titleSuggestions={suggestions.titles}
+              companySuggestions={suggestions.companies}
               canGoBack={state.history.length > 0}
               isBusy={isBusy}
               onContinue={handleContinue}

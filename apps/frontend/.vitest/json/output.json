@@ -1,1 +1,375 @@
-{"numTotalTestSuites":11,"numPassedTestSuites":11,"numFailedTestSuites":0,"numPendingTestSuites":0,"numTotalTests":28,"numPassedTests":28,"numFailedTests":0,"numPendingTests":0,"numTodoTests":0,"snapshot":{"added":0,"failure":false,"filesAdded":0,"filesRemoved":0,"filesRemovedList":[],"filesUnmatched":0,"filesUpdated":0,"matched":0,"total":0,"unchecked":0,"uncheckedKeysByFile":[],"unmatched":0,"updated":0,"didUpdate":false},"startTime":1793800818075,"success":true,"testResults":[{"assertionResults":[{"ancestorTitles":["DefaultResumeContent"],"fullName":"DefaultResumeContent blocks saving and shows an error when the name is empty","status":"passed","title":"blocks saving and shows an error when the name is empty","duration":64.36374999999998,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["DefaultResumeContent"],"fullName":"DefaultResumeContent shows an error for an invalid email","status":"passed","title":"shows an error for an invalid email","duration":9.756750000000011,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["DefaultResumeContent"],"fullName":"DefaultResumeContent persists valid defaults to storage and confirms the save","status":"passed","title":"persists valid defaults to storage and confirms the save","duration":9.54141699999991,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["DefaultResumeContent"],"fullName":"DefaultResumeContent adds and stores an education entry","status":"passed","title":"adds and stores an education entry","duration":13.645750000000135,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]}],"startTime":1793800820058,"endTime":1793800820155.6458,"status":"passed","message":"","name":"/Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/default-resume-content.test.tsx"},{"assertionResults":[{"ancestorTitles":["i18n locale parity (guards the next build break)"],"fullName":"i18n locale parity (guards the next build break) es.json has every en.json key with a matching shape","status":"passed","title":"es.json has every en.json key with a matching shape","duration":1.608041999999955,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["i18n locale parity (guards the next build break)"],"fullName":"i18n locale parity (guards the next build break) zh.json has every en.json key with a matching shape","status":"passed","title":"zh.json has every en.json key with a matching shape","duration":0.5623329999999669,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["i18n locale parity (guards the next build break)"],"fullName":"i18n locale parity (guards the next build break) ja.json has every en.json key with a matching shape","status":"passed","title":"ja.json has every en.json key with a matching shape","duration":0.5234169999999949,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["i18n locale parity (guards the next build break)"],"fullName":"i18n locale parity (guards the next build break) pt.json has every en.json key with a matching shape","status":"passed","title":"pt.json has every en.json key with a matching shape","duration":0.4757920000000695,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["i18n locale parity (guards the next build break)"],"fullName":"i18n locale parity (guards the next build break) fr.json has every en.json key with a matching shape","status":"passed","title":"fr.json has every en.json key with a matching shape","duration":0.4939170000000104,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["i18n locale parity (guards the next build break)"],"fullName":"i18n locale parity (guards the next build break) ko.json has every en.json key with a matching shape","status":"passed","title":"ko.json has every en.json key with a matching shape","duration":0.4519159999999829,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["i18n locale parity (guards the next build break)"],"fullName":"i18n locale parity (guards the next build break) reference (en.json) has a non-trivial number of keys","status":"passed","title":"reference (en.json) has a non-trivial number of keys","duration":0.07325000000003001,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["i18n locale parity (guards the next build break)"],"fullName":"i18n locale parity (guards the next build break) detects shape mismatches by JSON type (object / number / array vs string)","status":"passed","title":"detects shape mismatches by JSON type (object / number / array vs string)","duration":0.39170799999999417,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["getMessages"],"fullName":"getMessages resolves every locale declared in i18n/config to a populated object","status":"passed","title":"resolves every locale declared in i18n/config to a populated object","duration":0.11987499999997908,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["getMessages"],"fullName":"getMessages falls back to en for an unknown locale","status":"passed","title":"falls back to en for an unknown locale","duration":0.1118340000000444,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]}],"startTime":1793800818927,"endTime":1793800818932.1199,"status":"passed","message":"","name":"/Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/i18n-locale-parity.test.ts"},{"assertionResults":[{"ancestorTitles":["resume defaults storage"],"fullName":"resume defaults storage round-trips saved contact and education through localStorage","status":"passed","title":"round-trips saved contact and education through localStorage","duration":1.73762499999998,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["resume defaults storage"],"fullName":"resume defaults storage returns empty defaults when nothing is stored","status":"passed","title":"returns empty defaults when nothing is stored","duration":0.12137499999994361,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["resume defaults storage"],"fullName":"resume defaults storage returns empty defaults for corrupt JSON","status":"passed","title":"returns empty defaults for corrupt JSON","duration":0.12679099999991195,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["resume defaults storage"],"fullName":"resume defaults storage normalizes education ids to a stable sequence","status":"passed","title":"normalizes education ids to a stable sequence","duration":0.16612499999996544,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["applyResumeDefaults"],"fullName":"applyResumeDefaults seeds non-empty contact fields and the education list onto a fresh wizard state","status":"passed","title":"seeds non-empty contact fields and the education list onto a fresh wizard state","duration":0.19391700000005585,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["applyResumeDefaults"],"fullName":"applyResumeDefaults keeps the state education when there are no default entries","status":"passed","title":"keeps the state education when there are no default entries","duration":0.06925000000001091,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]}],"startTime":1793800818874,"endTime":1793800818877.1938,"status":"passed","message":"","name":"/Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/resume-defaults-storage.test.ts"},{"assertionResults":[{"ancestorTitles":["isValidEmail"],"fullName":"isValidEmail accepts a well-formed address","status":"passed","title":"accepts a well-formed address","duration":0.8366659999999229,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["isValidEmail"],"fullName":"isValidEmail rejects an address without a domain dot","status":"passed","title":"rejects an address without a domain dot","duration":0.12295900000003712,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["isValidEmail"],"fullName":"isValidEmail rejects an address with whitespace","status":"passed","title":"rejects an address with whitespace","duration":0.07266700000002402,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["isValidEmail"],"fullName":"isValidEmail trims surrounding whitespace before checking","status":"passed","title":"trims surrounding whitespace before checking","duration":0.07862499999998818,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["getResumeDefaultsErrors"],"fullName":"getResumeDefaultsErrors flags a missing name","status":"passed","title":"flags a missing name","duration":0.0996660000000702,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["getResumeDefaultsErrors"],"fullName":"getResumeDefaultsErrors does not flag email when it is empty","status":"passed","title":"does not flag email when it is empty","duration":0.06262500000002547,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["getResumeDefaultsErrors"],"fullName":"getResumeDefaultsErrors flags an invalid email only when one is present","status":"passed","title":"flags an invalid email only when one is present","duration":0.05562499999996362,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]},{"ancestorTitles":["getResumeDefaultsErrors"],"fullName":"getResumeDefaultsErrors reports no errors for a valid name and email","status":"passed","title":"reports no errors for a valid name and email","duration":0.05120799999997416,"failureMessages":[],"meta":{},"tags":[],"benchmarks":[]}],"startTime":1793800818846,"endTime":1793800818847.0996,"status":"passed","message":"","name":"/Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/resume-defaults-validation.test.ts"}]}
+{
+  "numTotalTestSuites": 11,
+  "numPassedTestSuites": 11,
+  "numFailedTestSuites": 0,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 28,
+  "numPassedTests": 28,
+  "numFailedTests": 0,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "snapshot": {
+    "added": 0,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0,
+    "didUpdate": false
+  },
+  "startTime": 1793800818075,
+  "success": true,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["DefaultResumeContent"],
+          "fullName": "DefaultResumeContent blocks saving and shows an error when the name is empty",
+          "status": "passed",
+          "title": "blocks saving and shows an error when the name is empty",
+          "duration": 64.36374999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["DefaultResumeContent"],
+          "fullName": "DefaultResumeContent shows an error for an invalid email",
+          "status": "passed",
+          "title": "shows an error for an invalid email",
+          "duration": 9.756750000000011,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["DefaultResumeContent"],
+          "fullName": "DefaultResumeContent persists valid defaults to storage and confirms the save",
+          "status": "passed",
+          "title": "persists valid defaults to storage and confirms the save",
+          "duration": 9.54141699999991,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["DefaultResumeContent"],
+          "fullName": "DefaultResumeContent adds and stores an education entry",
+          "status": "passed",
+          "title": "adds and stores an education entry",
+          "duration": 13.645750000000135,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1793800820058,
+      "endTime": 1793800820155.6458,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/default-resume-content.test.tsx"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["i18n locale parity (guards the next build break)"],
+          "fullName": "i18n locale parity (guards the next build break) es.json has every en.json key with a matching shape",
+          "status": "passed",
+          "title": "es.json has every en.json key with a matching shape",
+          "duration": 1.608041999999955,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["i18n locale parity (guards the next build break)"],
+          "fullName": "i18n locale parity (guards the next build break) zh.json has every en.json key with a matching shape",
+          "status": "passed",
+          "title": "zh.json has every en.json key with a matching shape",
+          "duration": 0.5623329999999669,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["i18n locale parity (guards the next build break)"],
+          "fullName": "i18n locale parity (guards the next build break) ja.json has every en.json key with a matching shape",
+          "status": "passed",
+          "title": "ja.json has every en.json key with a matching shape",
+          "duration": 0.5234169999999949,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["i18n locale parity (guards the next build break)"],
+          "fullName": "i18n locale parity (guards the next build break) pt.json has every en.json key with a matching shape",
+          "status": "passed",
+          "title": "pt.json has every en.json key with a matching shape",
+          "duration": 0.4757920000000695,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["i18n locale parity (guards the next build break)"],
+          "fullName": "i18n locale parity (guards the next build break) fr.json has every en.json key with a matching shape",
+          "status": "passed",
+          "title": "fr.json has every en.json key with a matching shape",
+          "duration": 0.4939170000000104,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["i18n locale parity (guards the next build break)"],
+          "fullName": "i18n locale parity (guards the next build break) ko.json has every en.json key with a matching shape",
+          "status": "passed",
+          "title": "ko.json has every en.json key with a matching shape",
+          "duration": 0.4519159999999829,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["i18n locale parity (guards the next build break)"],
+          "fullName": "i18n locale parity (guards the next build break) reference (en.json) has a non-trivial number of keys",
+          "status": "passed",
+          "title": "reference (en.json) has a non-trivial number of keys",
+          "duration": 0.07325000000003001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["i18n locale parity (guards the next build break)"],
+          "fullName": "i18n locale parity (guards the next build break) detects shape mismatches by JSON type (object / number / array vs string)",
+          "status": "passed",
+          "title": "detects shape mismatches by JSON type (object / number / array vs string)",
+          "duration": 0.39170799999999417,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["getMessages"],
+          "fullName": "getMessages resolves every locale declared in i18n/config to a populated object",
+          "status": "passed",
+          "title": "resolves every locale declared in i18n/config to a populated object",
+          "duration": 0.11987499999997908,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["getMessages"],
+          "fullName": "getMessages falls back to en for an unknown locale",
+          "status": "passed",
+          "title": "falls back to en for an unknown locale",
+          "duration": 0.1118340000000444,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1793800818927,
+      "endTime": 1793800818932.1199,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/i18n-locale-parity.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["resume defaults storage"],
+          "fullName": "resume defaults storage round-trips saved contact and education through localStorage",
+          "status": "passed",
+          "title": "round-trips saved contact and education through localStorage",
+          "duration": 1.73762499999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["resume defaults storage"],
+          "fullName": "resume defaults storage returns empty defaults when nothing is stored",
+          "status": "passed",
+          "title": "returns empty defaults when nothing is stored",
+          "duration": 0.12137499999994361,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["resume defaults storage"],
+          "fullName": "resume defaults storage returns empty defaults for corrupt JSON",
+          "status": "passed",
+          "title": "returns empty defaults for corrupt JSON",
+          "duration": 0.12679099999991195,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["resume defaults storage"],
+          "fullName": "resume defaults storage normalizes education ids to a stable sequence",
+          "status": "passed",
+          "title": "normalizes education ids to a stable sequence",
+          "duration": 0.16612499999996544,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["applyResumeDefaults"],
+          "fullName": "applyResumeDefaults seeds non-empty contact fields and the education list onto a fresh wizard state",
+          "status": "passed",
+          "title": "seeds non-empty contact fields and the education list onto a fresh wizard state",
+          "duration": 0.19391700000005585,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["applyResumeDefaults"],
+          "fullName": "applyResumeDefaults keeps the state education when there are no default entries",
+          "status": "passed",
+          "title": "keeps the state education when there are no default entries",
+          "duration": 0.06925000000001091,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1793800818874,
+      "endTime": 1793800818877.1938,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/resume-defaults-storage.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["isValidEmail"],
+          "fullName": "isValidEmail accepts a well-formed address",
+          "status": "passed",
+          "title": "accepts a well-formed address",
+          "duration": 0.8366659999999229,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["isValidEmail"],
+          "fullName": "isValidEmail rejects an address without a domain dot",
+          "status": "passed",
+          "title": "rejects an address without a domain dot",
+          "duration": 0.12295900000003712,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["isValidEmail"],
+          "fullName": "isValidEmail rejects an address with whitespace",
+          "status": "passed",
+          "title": "rejects an address with whitespace",
+          "duration": 0.07266700000002402,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["isValidEmail"],
+          "fullName": "isValidEmail trims surrounding whitespace before checking",
+          "status": "passed",
+          "title": "trims surrounding whitespace before checking",
+          "duration": 0.07862499999998818,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["getResumeDefaultsErrors"],
+          "fullName": "getResumeDefaultsErrors flags a missing name",
+          "status": "passed",
+          "title": "flags a missing name",
+          "duration": 0.0996660000000702,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["getResumeDefaultsErrors"],
+          "fullName": "getResumeDefaultsErrors does not flag email when it is empty",
+          "status": "passed",
+          "title": "does not flag email when it is empty",
+          "duration": 0.06262500000002547,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["getResumeDefaultsErrors"],
+          "fullName": "getResumeDefaultsErrors flags an invalid email only when one is present",
+          "status": "passed",
+          "title": "flags an invalid email only when one is present",
+          "duration": 0.05562499999996362,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": ["getResumeDefaultsErrors"],
+          "fullName": "getResumeDefaultsErrors reports no errors for a valid name and email",
+          "status": "passed",
+          "title": "reports no errors for a valid name and email",
+          "duration": 0.05120799999997416,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1793800818846,
+      "endTime": 1793800818847.0996,
+      "status": "passed",
+      "message": "",
+      "name": "/Users/kristianallin/Code/Resume-Matcher/apps/frontend/tests/resume-defaults-validation.test.ts"
+    }
+  ]
+}

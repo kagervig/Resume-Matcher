@@ -1,20 +1,33 @@
 'use client';
 
 import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
+import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { StatusIndicator } from '@/components/ui/status-indicator';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/lib/i18n';
-import type { ResumeWizardProgress, ResumeWizardStep } from '@/lib/api/resume-wizard';
+import type {
+  ResumeWizardProgress,
+  ResumeWizardSection,
+  ResumeWizardStep,
+} from '@/lib/api/resume-wizard';
 
 interface QuestionCardProps {
   step: ResumeWizardStep;
   question: string;
+  section: ResumeWizardSection;
   sectionLabel: string;
   progress: ResumeWizardProgress;
   answer: string;
   onAnswerChange: (value: string) => void;
+  /** Structured work-experience inputs, shown only on the workExperience step. */
+  jobTitle: string;
+  company: string;
+  onJobTitleChange: (value: string) => void;
+  onCompanyChange: (value: string) => void;
+  titleSuggestions: string[];
+  companySuggestions: string[];
   canGoBack: boolean;
   isBusy: boolean;
   onContinue: () => void;
@@ -33,10 +46,17 @@ interface QuestionCardProps {
 export function QuestionCard({
   step,
   question,
+  section,
   sectionLabel,
   progress,
   answer,
   onAnswerChange,
+  jobTitle,
+  company,
+  onJobTitleChange,
+  onCompanyChange,
+  titleSuggestions,
+  companySuggestions,
   canGoBack,
   isBusy,
   onContinue,
@@ -52,7 +72,10 @@ export function QuestionCard({
   const { t } = useTranslations();
   const isReview = step === 'review';
   const isQuestion = step === 'question';
-  const canContinue = answer.trim().length > 0 && !isBusy;
+  const isWorkExperience = isQuestion && section === 'workExperience';
+  const hasStructuredInput = jobTitle.trim().length > 0 || company.trim().length > 0;
+  const canContinue =
+    !isBusy && (answer.trim().length > 0 || (isWorkExperience && hasStructuredInput));
   const totalSegments = Math.max(progress.total, 1);
   const sectionId = useId();
   const questionId = useId();
@@ -147,18 +170,50 @@ export function QuestionCard({
             </ul>
           )
         ) : (
-          <div className="grid gap-2">
-            <Label htmlFor="resume-wizard-answer">{t('resumeWizard.answerLabel')}</Label>
-            <Textarea
-              id="resume-wizard-answer"
-              ref={answerRef}
-              aria-describedby={questionId}
-              value={answer}
-              onChange={(event) => onAnswerChange(event.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isBusy}
-              className="min-h-40 font-sans text-base"
-            />
+          <div className="grid gap-4">
+            {isWorkExperience && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="resume-wizard-title">
+                    {t('resumeWizard.experience.titleLabel')}
+                  </Label>
+                  <AutocompleteInput
+                    id="resume-wizard-title"
+                    value={jobTitle}
+                    onChange={(event) => onJobTitleChange(event.target.value)}
+                    suggestions={titleSuggestions}
+                    placeholder={t('resumeWizard.experience.titlePlaceholder')}
+                    disabled={isBusy}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="resume-wizard-company">
+                    {t('resumeWizard.experience.companyLabel')}
+                  </Label>
+                  <AutocompleteInput
+                    id="resume-wizard-company"
+                    value={company}
+                    onChange={(event) => onCompanyChange(event.target.value)}
+                    suggestions={companySuggestions}
+                    placeholder={t('resumeWizard.experience.companyPlaceholder')}
+                    disabled={isBusy}
+                  />
+                </div>
+              </div>
+            )}
+            <div className="grid gap-2">
+              <Label htmlFor="resume-wizard-answer">{t('resumeWizard.answerLabel')}</Label>
+              <Textarea
+                id="resume-wizard-answer"
+                ref={answerRef}
+                aria-describedby={questionId}
+                value={answer}
+                onChange={(event) => onAnswerChange(event.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isBusy}
+                className="min-h-40 font-sans text-base"
+              />
+            </div>
           </div>
         )}
 

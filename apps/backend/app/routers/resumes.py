@@ -77,7 +77,8 @@ from app.schemas import (
     UpdateTitleRequest,
     normalize_resume_data,
 )
-from app.schemas.models import ResumeTemplate
+from app.schemas.models import ExperienceSuggestionsResponse, ResumeTemplate
+from app.services.experience_suggestions import build_experience_suggestions
 from app.schemas.refinement import RefinementConfig
 from app.services.ats import compute_ats_score
 from app.services.bullet_selector import SELECTABLE_SECTIONS
@@ -1386,6 +1387,25 @@ async def list_resumes(include_master: bool = Query(False)) -> ResumeListRespons
     ]
 
     return ResumeListResponse(request_id=str(uuid4()), data=summaries)
+
+
+@router.get("/experience-suggestions", response_model=ExperienceSuggestionsResponse)
+async def experience_suggestions() -> ExperienceSuggestionsResponse:
+    """Distinct companies/titles from the user's resumes + tracker cards.
+
+    Powers the resume wizard's work-experience autocomplete.
+    """
+    try:
+        resumes = await db.list_resumes()
+        applications = await db.list_applications()
+    except Exception as e:
+        logger.error(f"Experience suggestions lookup failed: {e}")
+        raise HTTPException(
+            status_code=500, detail="Could not load suggestions. Please try again."
+        )
+    return ExperienceSuggestionsResponse(
+        **build_experience_suggestions(resumes, applications)
+    )
 
 
 @router.get("/render-drafts/{token}")

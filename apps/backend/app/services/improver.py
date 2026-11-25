@@ -62,7 +62,7 @@ def _validate_keyword_result(result: dict[str, Any]) -> dict[str, Any]:
     """Validate keyword fields consumed by tailoring while allowing sparse output."""
     validated = dict(result)
     for field in ("required_skills", "preferred_skills", "keywords"):
-        validated[field] = _validate_string_list_field(result, field)
+        validated[field] = _atomize_keyword_list(_validate_string_list_field(result, field))
     for field in (
         "experience_requirements",
         "education_requirements",
@@ -821,6 +821,69 @@ def _prepare_keywords_for_prompt(job_keywords: dict[str, Any]) -> str:
 def _normalize_skill_key(skill: str) -> str:
     """Normalize a skill for case-insensitive comparison."""
     return re.sub(r"\s+", " ", skill.strip()).casefold()
+
+
+# Requirement lines often open with a clause that is not itself a skill
+# ("Proficiency in ...", "Experience with ...", "Understanding of ..."); strip it so
+# the real skill(s) remain.
+_SKILL_LEAD_IN = re.compile(
+    r"^(?:proficiency|proficient|experience|experienced|expertise|expert|familiarity|"
+    r"familiar|knowledge|understanding|competency|competence|background|fluency|fluent|"
+    r"ability|able|skilled|strong|solid|demonstrated|hands-on|working|excellent)\b"
+    r".*?\b(?:in|with|of|using|to)\s+",
+    re.IGNORECASE,
+)
+# A requirement line often enumerates example skills after one of these lead-ins
+# ("...such as C, C++, Java..."); only the enumerated tail is useful as keywords.
+_ENUMERATION_LEAD_IN = re.compile(
+    r".*?\b(?:such as|including|like|e\.?g\.?|for example)\b[:\s]*",
+    re.IGNORECASE,
+)
+# Treat " or "/" and " as list separators so ", or Go" yields "Go", then split on
+# commas/semicolons. "/" is deliberately NOT a separator so CI/CD and TCP/IP survive.
+_CONJUNCTION = re.compile(r"\s+(?:or|and)\s+", re.IGNORECASE)
+_LIST_SEPARATOR = re.compile(r"\s*[,;]\s*")
+# Anything still longer than this (after splitting) is a sentence, not a keyword.
+_MAX_KEYWORD_WORDS = 5
+
+
+def _atomize_keyword_list(items: Any) -> list[str]:
+    """Split requirement sentences into atomic skill keywords.
+
+    The extractor sometimes returns a whole requirement line (e.g. "Proficiency in at
+    least one programming language, such as C, C++, Java, Python, or Go") as a single
+    keyword. ATS matching looks for discrete skills, so enumerations are split into
+    separate entries, lead-in clauses are dropped, and leftover sentence-like fragments
+    are discarded. Short multi-word skills ("machine learning") and slashed skills
+    ("CI/CD") are preserved. Dedupes case-insensitively, keeping first-seen casing.
+    """
+    if not isinstance(items, list):
+        return []
+    result: list[str] = []
+    seen: set[str] = set()
+    for raw in items:
+        if not isinstance(raw, str):
+            continue
+        entry = raw.strip()
+        if not entry:
+            continue
+        entry = _SKILL_LEAD_IN.sub("", entry, count=1)
+        lead = _ENUMERATION_LEAD_IN.match(entry)
+        tail = entry[lead.end() :] if lead else entry
+        if lead or "," in tail:
+            tail = _CONJUNCTION.sub(", ", tail)
+            pieces = _LIST_SEPARATOR.split(tail)
+        else:
+            pieces = [tail]
+        for piece in pieces:
+            skill = piece.strip(" \t.,;:•-")
+            if not skill or len(skill.split()) > _MAX_KEYWORD_WORDS:
+                continue
+            key = _normalize_skill_key(skill)
+            if key and key not in seen:
+                seen.add(key)
+                result.append(skill)
+    return result
 
 
 def _extract_skill_index(items: Any) -> dict[str, str]:

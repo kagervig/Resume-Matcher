@@ -1505,6 +1505,12 @@
     "created": {
       "title": "Master Resume Created",
       "description": "Your master resume was created. Open it to continue editing."
+    },
+    "experience": {
+      "titleLabel": "Job title",
+      "companyLabel": "Company",
+      "titlePlaceholder": "e.g. Backend Engineer",
+      "companyPlaceholder": "e.g. Acme Corp"
     }
   },
   "tracker": {

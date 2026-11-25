@@ -1505,6 +1505,12 @@
     "created": {
       "title": "マスター履歴書を作成しました",
       "description": "マスター履歴書を作成しました。開いて編集を続けてください。"
+    },
+    "experience": {
+      "titleLabel": "役職",
+      "companyLabel": "会社名",
+      "titlePlaceholder": "例: バックエンドエンジニア",
+      "companyPlaceholder": "例: Acme Corp"
     }
   },
   "tracker": {

@@ -75,11 +75,17 @@ System prompt (in `improver.py`): *"You are an expert job description analyzer."
 ```
 Extract job requirements as JSON. Output ONLY the JSON object, no other text.
 
+required_skills, preferred_skills, and keywords must be ATOMIC skills, not requirement
+sentences: each item is a single technology, tool, or short competency (at most ~4 words).
+Split any list such as "C, C++, Java, Python, or Go" into separate items, and drop lead-in
+phrasing like "Proficiency in ..." or "Experience with ...". Never put a full sentence in
+these fields. Keep slashed skills intact (e.g. "CI/CD").
+
 Example format:
 {
   "company": "Acme Corp",
   "role": "Senior Backend Engineer",
-  "required_skills": ["Python", "AWS"],
+  "required_skills": ["C", "C++", "Java", "Python", "Go", "AWS"],
   "preferred_skills": ["Kubernetes"],
   "experience_requirements": ["5+ years"],
   "education_requirements": ["Bachelor's in CS"],

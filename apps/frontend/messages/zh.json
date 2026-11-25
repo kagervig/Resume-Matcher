@@ -1505,6 +1505,12 @@
     "created": {
       "title": "主简历已创建",
       "description": "您的主简历已创建。打开它以继续编辑。"
+    },
+    "experience": {
+      "titleLabel": "职位",
+      "companyLabel": "公司",
+      "titlePlaceholder": "例如：后端工程师",
+      "companyPlaceholder": "例如：Acme Corp"
     }
   },
   "tracker": {

@@ -9,10 +9,17 @@ vi.mock('@/lib/i18n', () => ({
 
 const baseProps = {
   question: 'What is your most recent role?',
+  section: 'summary' as const,
   sectionLabel: 'resumeWizard.sections.workExperience',
   progress: { current: 2, total: 8 },
   answer: '',
   onAnswerChange: vi.fn(),
+  jobTitle: '',
+  company: '',
+  onJobTitleChange: vi.fn(),
+  onCompanyChange: vi.fn(),
+  titleSuggestions: [] as string[],
+  companySuggestions: [] as string[],
   canGoBack: true,
   isBusy: false,
   onContinue: vi.fn(),
@@ -87,6 +94,37 @@ describe('QuestionCard', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'resumeWizard.actions.continue' }));
     expect(onContinue).toHaveBeenCalledTimes(1);
+  });
+
+  describe('work experience step', () => {
+    it('shows Title and Company autocomplete fields', () => {
+      render(<QuestionCard step="question" {...baseProps} section="workExperience" />);
+      expect(screen.getByLabelText('resumeWizard.experience.titleLabel')).toBeInTheDocument();
+      expect(screen.getByLabelText('resumeWizard.experience.companyLabel')).toBeInTheDocument();
+    });
+
+    it('does not show those fields on other sections', () => {
+      render(<QuestionCard step="question" {...baseProps} section="education" />);
+      expect(screen.queryByLabelText('resumeWizard.experience.titleLabel')).not.toBeInTheDocument();
+    });
+
+    it('enables Continue from structured input alone (empty details)', () => {
+      const onContinue = vi.fn();
+      render(
+        <QuestionCard
+          step="question"
+          {...baseProps}
+          section="workExperience"
+          answer=""
+          company="Acme"
+          onContinue={onContinue}
+        />
+      );
+      const button = screen.getByRole('button', { name: 'resumeWizard.actions.continue' });
+      expect(button).toBeEnabled();
+      fireEvent.click(button);
+      expect(onContinue).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('shows the ready hint on a question step only when isComplete', () => {
